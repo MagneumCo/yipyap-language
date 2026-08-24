@@ -5,12 +5,14 @@
 1. Package installation places a reviewed artifact on a provider host.
 2. Plugin enablement makes the shared Skill and lifecycle carrier discoverable.
 3. Root-session startup or restoration delivers the reviewed lifecycle marker.
-4. The fixed connector can reach the bounded Yip-Yap provider service with a
-   locally configured opaque session token.
-5. A fresh binding round trip establishes Connected state.
-6. Learning Mode is separately controlled by the account holder on a Yip-Yap
+4. Only an explicit setup request may redeem an app-issued one-time code through
+   `yipyapPair` and store the returned opaque session credential locally.
+5. The fixed connector can reach the bounded Yip-Yap provider service with that
+   host-local credential.
+6. A fresh binding round trip establishes Connected state.
+7. Learning Mode is separately controlled by the account holder on a Yip-Yap
    surface and evaluated privately by the service.
-7. Complete, fresh, compatible settings and teaching context establish
+8. Complete, fresh, compatible settings and teaching context establish
    teaching readiness.
 
 No layer implies a later one. Installing the plugin does not connect an account;
@@ -19,29 +21,34 @@ prove that the current reply may be mixed.
 
 ## Fixed connector surface
 
-The provider bridge exposes exactly these five operations and a fixed
-production service origin:
+The provider bridge exposes exactly one explicit pairing bootstrap plus five
+authenticated provider operations at a fixed production service origin:
 
 | Operation | Purpose | Ordinary rendering |
 | --- | --- | --- |
+| `yipyapPair` | Redeem one short app-issued code and persist the returned credential internally | Explicit setup only; never automatic |
 | `providerReadConnectionStatus` | Fresh binding, provider, scope, and convergence attestation | First read |
 | `providerReadTeachingSettings` | Bounded track, language/script, stored level, revision, and version | Second read |
 | `providerReadTeachingContext` | Generic readiness gate plus at most 12 eligible target/gloss entries | Third read |
 | `providerReadLexiconProjection` | Explicit bounded lexicon-page request | Never automatic |
 | `providerSubmitLearnerEvent` | Separately reviewed, explicitly requested closed event | Never during rendering |
 
-The connector uses one opaque, revocable token created through the Yip-Yap
-app's AI-connections flow. It is stored in host-local connector configuration,
-outside versioned plugin files. The token is never a tool argument, model
-result, prompt value, command-line argument, log field, or Firebase, Apple, or
-Google credential.
+The app's AI-connections flow creates the short, single-use pairing code. On an
+explicit setup request, `yipyapPair` normalizes and redeems that code exactly
+once; it never retries an ambiguous redemption. The returned opaque, revocable
+session credential is stored in host-local connector configuration outside
+versioned plugin files. That credential is never a tool argument, model result,
+prompt value, command-line argument, log field, or Firebase, Apple, or Google
+credential. Pairing success proves only credential storage, not Connected or
+teaching-ready state.
 
 Connection status contains raw account and installation binding values only
 inside the connector so it can validate the round trip. Strip those identities
 before returning status to the Skill or model. Teaching settings and teaching
 context contain no identity and no Learning Mode field.
 
-Every request reauthenticates the token. Do not treat possession, a previous
+Every authenticated provider request reauthenticates the credential. Do not
+treat possession, a previous
 success, or cached data as Connected. Missing local configuration is Not set
 up. An invalid or revoked binding is Needs reconnect. A network or safe-carrier
 failure is Unavailable. A credential whose round trip or shape cannot yet be

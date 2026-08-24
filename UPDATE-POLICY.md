@@ -9,6 +9,13 @@ install, the Yip-Yap app supplies the release-key pin independently and verifies
 the immutable bundle. A public key downloaded from the same untrusted package
 cannot authenticate that package.
 
+Immutable v0.2.0 exact-pins the pre-pairing interface packet, so its updater
+correctly rejects v0.2.1 and must not be weakened. Cross that one-time contract
+boundary only with a fresh v0.2.1 install or a provider-native or Yip-Yap
+app-controlled reinstall of its signed immutable release. Later releases that
+retain the installed interface contract follow the normal signed sequence
+rules below.
+
 Update checking is separate from provider startup. The lifecycle hook never
 contacts GitHub or changes installed files. A separately trusted,
 Yip-Yap-controlled surface may check automatically on a bounded cadence or for

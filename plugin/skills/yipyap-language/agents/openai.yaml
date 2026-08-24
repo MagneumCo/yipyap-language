@@ -1,6 +1,6 @@
 interface:
   display_name: "Yip-Yap Language"
-  short_description: "Auto-load Yip-Yap; check setup"
+  short_description: "Yip-Yap language learning"
   default_prompt: "Use $yipyap-language to report my current Yip-Yap setup status."
 policy:
   allow_implicit_invocation: true

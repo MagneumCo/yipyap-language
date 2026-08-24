@@ -15,9 +15,10 @@ rules are:
     active task; activation requires a provider restart and new root task.
 19. **The service is the moat.** Installed bytes are readable. Account truth,
     entitlement, selection, and learner evidence remain server-authoritative.
-20. **Five calls, read-only rendering.** The connector exposes only the five
-    declared provider operations. Ordinary replies use the three ordered reads;
-    incomplete input is L0 and rendering submits no learner event.
+20. **Pairing plus five calls, read-only rendering.** The connector exposes one
+    explicit pairing bootstrap plus five authenticated provider operations.
+    Ordinary replies use the three ordered reads; incomplete input is L0 and
+    rendering submits no learner event.
 21. **No automatic apply.** Update checks stay outside lifecycle startup.
     Candidate-bundle download and future provider staging/apply require
     explicit user acts, and downloaded bytes are not staged, installed, or

@@ -76,6 +76,20 @@ sequence-plus-manifest receipt. Provider apply must later reject an incompatible
 Claude or Codex host version. Rejection leaves the current verified release
 unchanged.
 
+### One-time v0.2.0 interface transition
+
+The immutable v0.2.0 updater pins the pre-pairing interface packet. Version
+0.2.1 pins the amended packet that adds app-led one-time-code pairing, so the
+v0.2.0 checker must reject v0.2.1 as an incompatible runtime contract. This is
+intentional fail-closed behavior, not an instruction to relax validation.
+
+Version 0.2.1 is therefore fresh-install or controlled-reinstall only for an
+existing v0.2.0 installation. Use the provider-native marketplace path or the
+Yip Yap app's independently verified immutable-release installer. Never replace
+the old packet pin, updater, profile, or installed files in place. The external
+connector credential file remains outside the release package; after reinstall,
+pair with a new one-time code and prove a fresh connection before teaching.
+
 ## Check status
 
 For an explicit `Yip-Yap update status` request, invoke the separately trusted

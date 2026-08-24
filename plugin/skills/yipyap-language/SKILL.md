@@ -58,8 +58,10 @@ account learning session, or persist provider-scope state. A new installation
 and every new account begin at L0; an authorized account may separately return
 another stored level through the service.
 
-The learner does not need to remember a magic phrase in each fresh task. The
-carrier invokes this Skill automatically; it does not enable Learning Mode.
+On a supported host whose packaged lifecycle hook is enabled and trusted, the
+learner does not need to remember a magic phrase in each fresh task: the carrier
+invokes this Skill automatically. Unsupported, disabled, or untrusted hook
+surfaces require explicit invocation. Neither path enables Learning Mode.
 
 ## Existing-session restore
 
@@ -80,18 +82,21 @@ Treat package installation, plugin enablement, startup completion, connector
 state, Learning Mode, settings availability, and teaching readiness as
 separate facts. Never infer one from another.
 
-The connector exposes exactly five fixed operations:
+The connector exposes exactly one pairing bootstrap and five fixed
+authenticated provider operations:
 
+- `yipyapPair` for an explicit app-led setup request;
 - `providerReadConnectionStatus`;
 - `providerReadTeachingSettings`;
 - `providerReadTeachingContext`;
 - `providerReadLexiconProjection`; and
 - `providerSubmitLearnerEvent`.
 
-Ordinary reply rendering uses only the first three, in that order. It never
-reads the full lexicon projection and never submits a learner event. Do not
-invent a sixth tool, endpoint, field, scope, or provider-specific teaching
-path.
+Ordinary reply rendering uses only the three authenticated reads status →
+settings → context, in that order. It never reads the full lexicon projection
+and never submits a learner event. Do not
+invent a seventh tool, a sixth authenticated provider operation, another
+endpoint, field, scope, or provider-specific teaching path.
 
 For an explicit setup or status request, report only verified facts:
 
@@ -138,9 +143,13 @@ track, instruction language, stored level, confirmed word, or account state.
 - For status, use the truthful block above. Do not reveal connector-internal
   account or installation identities.
 - Recognize only the public grammar in `controls-v1.md`.
-- Never begin authorization automatically. When no session token is configured,
-  report Not set up and direct the learner to the Yip-Yap app's AI-connections
-  walkthrough.
+- Never begin authorization automatically. When no session credential is
+  configured, report Not set up and direct the learner to the Yip-Yap app's
+  AI-connections walkthrough.
+- Only on the learner's explicit setup request with a short one-time code from
+  that walkthrough, call `yipyapPair` once. Never retry an ambiguous redemption,
+  reveal or request the returned session credential, or treat pairing as proof
+  that Learning Mode or teaching context is available.
 - Do not execute an on/off request from the provider host. Explain that
   Learning Mode is an account-holder action on a Yip-Yap-controlled surface.
 - Never claim that installing, connecting, or invoking the Skill enabled

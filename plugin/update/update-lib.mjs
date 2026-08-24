@@ -23,7 +23,7 @@ const PRODUCTION_BASE_URL = "https://us-central1-yipyap-language.cloudfunctions.
 const TOKEN_ENVIRONMENT_KEY = "YIPYAP_SESSION_TOKEN";
 const CONNECTOR_PROFILE = "yipyap.provider-callables.v1";
 const INTERFACE_PACKET_SHA256 =
-  "79e7b9e7199cdb7c4f0eb1c63ce3d56a470d409d6366b76118f4c57adb7f49ab";
+  "d729164310ac5be601888c215e67ee3aa1b9fead4fe257410c6b485f56ee9171";
 const CALLABLES = Object.freeze([
   "providerReadConnectionStatus",
   "providerReadTeachingSettings",

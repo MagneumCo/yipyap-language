@@ -1,18 +1,21 @@
 # Yip-Yap Language
 
-The official provider-neutral Yip-Yap language-learning plugin for Claude and
-Codex. One shared Skill shapes ordinary replies while the Yip-Yap service owns
-account settings, curriculum selection, and learner truth.
+The official provider-neutral Yip-Yap language-learning plugin package for
+Claude and Codex. The same shared Skill is prepared for OpenAI's universal
+ChatGPT/Codex directory once its app-owned remote-service gates close. The Skill
+shapes ordinary replies while the Yip-Yap service owns account settings,
+curriculum selection, and learner truth.
 
 ## Product boundary
 
 - A new installation starts safely at L0.
-- The lifecycle hook only restores the shared Skill. It performs no network
-  request and changes no account state.
+- On supported hosts, the lifecycle hook bootstraps or restores the shared
+  Skill. It performs no network request and changes no account state.
 - Connected teaching requires an authorized Yip-Yap account projection.
-- The connector exposes five fixed operations. Ordinary reply rendering uses
-  only connection-status, teaching-settings, and teaching-context reads; it
-  never submits a learner event.
+- The connector exposes one explicit pairing bootstrap plus five fixed
+  authenticated operations. Ordinary reply rendering uses only
+  connection-status, teaching-settings, and teaching-context reads; it never
+  pairs an account or submits a learner event.
 - Conversation text, files, repository context, prompts, and transcripts are
   never sent to Yip-Yap by the language connector.
 - The provider model cannot mark vocabulary known, grade a learner, promote a
@@ -26,6 +29,11 @@ trust from a key downloaded beside the plugin or install from mutable `main`.
 A provider marketplace becomes an official first-install path only when its
 verified publisher and immutable package evidence are published. Releases
 activate only after a complete provider restart and a new root task.
+
+The immutable v0.2.0 updater exact-pins the pre-pairing interface contract and
+correctly rejects v0.2.1. Cross that one-time boundary only with a fresh install
+or provider-native/app-controlled reinstall of signed immutable v0.2.1; do not
+weaken the old pin. Later same-contract releases follow the signed sequence.
 
 The current checker/fetcher verifies the signed stable index, exact
 deterministic archive inventory, embedded release identity, and trust-root

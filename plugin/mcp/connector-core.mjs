@@ -1,19 +1,59 @@
 import { randomBytes } from "node:crypto";
+import {
+  chmodSync,
+  closeSync,
+  constants as fsConstants,
+  fchmodSync,
+  fstatSync,
+  fsyncSync,
+  lstatSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  renameSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
 
 /**
  * Yip-Yap account connector v1.
  *
  * This module is deliberately dependency-free. It owns the narrow trust
- * boundary between an MCP host and the five Firebase provider callables:
- * credentials come from the environment, service binding identities never
- * enter tool inputs, and account/installation/provider identities never leave
- * the connector in model-visible results.
+ * boundary between an MCP host, the app-led pairing callable, and the five
+ * authenticated Firebase provider callables. Credentials remain connector-
+ * local, service binding identities never enter tool inputs, and account or
+ * installation identities never leave the connector in model-visible results.
  */
 
 export const FIREBASE_CALLABLE_BASE =
   "https://us-central1-yipyap-language.cloudfunctions.net";
 export const SESSION_TOKEN_ENV = "YIPYAP_SESSION_TOKEN";
-export const CONNECTOR_VERSION = "0.2.0";
+export const CONNECTOR_VERSION = "0.2.1";
+
+/**
+ * Pairing: the app's Connect flow shows a short single-use code; this
+ * connector redeems it
+ * once at `redeemPairingCode` and stores the returned session token in its
+ * own 0600 config file, read per invocation — no restart, and no human ever
+ * sees token material. The code grammar and normalization are the packet's:
+ * 8-char Crockford base32, case/separator/lookalike forgiving.
+ */
+export const REDEEM_CALLABLE = "redeemPairingCode";
+const PAIRING_CODE = /^[0-9A-HJKMNP-TV-Z]{8}$/u;
+
+export function connectorConfigPath(providerId) {
+  return join(homedir(), ".yipyap", `connector-${providerId}.json`);
+}
+
+export function normalizePairingCode(raw) {
+  return raw
+    .toUpperCase()
+    .replace(/[-\s]/gu, "")
+    .replace(/O/gu, "0")
+    .replace(/[IL]/gu, "1");
+}
 
 const CALLABLE_NAMES = Object.freeze([
   "providerReadConnectionStatus",
@@ -89,7 +129,10 @@ const MUTATING_KINDS = new Set(["item_edited", "item_archived"]);
 const PERSONAL_ONLY_KINDS = new Set(["item_proposed", "item_edited", "item_archived"]);
 const MAX_RESPONSE_BYTES = 1024 * 1024;
 const MAX_REQUEST_BYTES = 64 * 1024;
+const MAX_CONFIG_BYTES = 1024;
 const DEFAULT_TIMEOUT_MS = 15_000;
+const CONFIG_ABSENT = Symbol("yipyap-config-absent");
+const CONFIG_INVALID = Symbol("yipyap-config-invalid");
 
 const EMPTY_INPUT_SCHEMA = Object.freeze({
   type: "object",
@@ -151,32 +194,94 @@ const EVENT_INPUT_SCHEMA = Object.freeze({
   additionalProperties: false,
 });
 
+const PAIR_INPUT_SCHEMA = Object.freeze({
+  type: "object",
+  properties: Object.freeze({
+    pairingCode: Object.freeze({
+      type: "string",
+      minLength: 1,
+      maxLength: 32,
+      description: "The short code shown on the Yip Yap app's Connect screen (like 4K7Q-9DPM).",
+    }),
+  }),
+  required: Object.freeze(["pairingCode"]),
+  additionalProperties: false,
+});
+
 export const CONNECTOR_TOOLS = Object.freeze([
   Object.freeze({
+    name: "yipyapPair",
+    title: "Pair Yip Yap",
+    description:
+      "Redeem a one-time Yip Yap pairing code from the app's Connect screen. Stores the session credential in the connector's local config; the credential is never shown.",
+    inputSchema: PAIR_INPUT_SCHEMA,
+    annotations: Object.freeze({
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: false,
+      openWorldHint: false,
+    }),
+  }),
+  Object.freeze({
     name: "providerReadConnectionStatus",
+    title: "Read Yip Yap connection",
     description: "Read model-safe connection scopes and convergence status. Returns no binding IDs.",
     inputSchema: EMPTY_INPUT_SCHEMA,
+    annotations: Object.freeze({
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    }),
   }),
   Object.freeze({
     name: "providerReadTeachingSettings",
+    title: "Read teaching settings",
     description: "Read the bounded Yip-Yap teaching settings projection.",
     inputSchema: EMPTY_INPUT_SCHEMA,
+    annotations: Object.freeze({
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    }),
   }),
   Object.freeze({
     name: "providerReadTeachingContext",
+    title: "Read teaching context",
     description: "Read a bounded teaching context using content-free per-reply zone signals.",
     inputSchema: CONTEXT_INPUT_SCHEMA,
+    annotations: Object.freeze({
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    }),
   }),
   Object.freeze({
     name: "providerReadLexiconProjection",
+    title: "Read lexicon page",
     description: "Read one bounded page of the account lexicon projection.",
     inputSchema: PROJECTION_INPUT_SCHEMA,
+    annotations: Object.freeze({
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    }),
   }),
   Object.freeze({
     name: "providerSubmitLearnerEvent",
+    title: "Submit learner event",
     description:
       "Submit one bounded learner event. Binding, event, idempotency, and proposal identities are minted or injected internally.",
     inputSchema: EVENT_INPUT_SCHEMA,
+    annotations: Object.freeze({
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: false,
+      openWorldHint: false,
+    }),
   }),
 ]);
 
@@ -863,6 +968,206 @@ function createTransport({ getToken, fetchImpl, timeoutMs }) {
   };
 }
 
+function parsePairArguments(value) {
+  const args = requireRecord(value ?? {});
+  requireExactKeys(args, new Set(["pairingCode"]));
+  const raw = args.pairingCode;
+  if (typeof raw !== "string" || raw.length === 0 || raw.length > 32) {
+    fail("invalid_request", "schema_invalid");
+  }
+  const normalized = normalizePairingCode(raw);
+  if (!PAIRING_CODE.test(normalized)) fail("invalid_request", "schema_invalid");
+  return normalized;
+}
+
+/**
+ * The one envelope parser allowed to touch token material: redemption is
+ * the single moment the session token legitimately crosses the wire. The
+ * token is validated, written to the 0600 config, and never enters any
+ * returned structure — the generic parsers' no-token law stays intact for
+ * every other response.
+ */
+function parseRedeemEnvelope(text) {
+  let decoded;
+  try {
+    decoded = JSON.parse(text);
+  } catch {
+    fail("invalid_response", "invalid_json");
+  }
+  const envelope = requireRecord(decoded);
+  const hasResult = Object.hasOwn(envelope, "result");
+  const hasError = Object.hasOwn(envelope, "error");
+  if (hasResult === hasError) fail("invalid_response", "schema_invalid");
+  if (hasResult) {
+    requireExactKeys(envelope, new Set(["result"]));
+    const result = requireRecord(envelope.result);
+    requireExactKeys(result, new Set(["sessionToken"]));
+    const sessionToken = result.sessionToken;
+    if (typeof sessionToken !== "string" || !SESSION_TOKEN.test(sessionToken)) {
+      fail("invalid_response", "schema_invalid");
+    }
+    return sessionToken;
+  }
+  requireExactKeys(envelope, new Set(["error"]));
+  const error = requireRecord(envelope.error);
+  const details = typeof error.details === "object" && error.details !== null
+    ? error.details
+    : null;
+  const rawCode = details && typeof details.code === "string"
+    ? details.code
+    : "service_refused";
+  fail("refused", ERROR_CODES.has(rawCode) ? rawCode : "service_refused");
+}
+
+function lstatOrAbsent(targetPath) {
+  try {
+    return lstatSync(targetPath);
+  } catch (error) {
+    if (error?.code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+function writeConnectorConfig(configPath, sessionToken) {
+  const directory = dirname(configPath);
+  mkdirSync(directory, { recursive: true, mode: 0o700 });
+  const directoryStat = lstatSync(directory);
+  if (directoryStat.isSymbolicLink() || !directoryStat.isDirectory()) {
+    throw new Error("Yip-Yap connector storage is unavailable.");
+  }
+  chmodSync(directory, 0o700);
+
+  const existing = lstatOrAbsent(configPath);
+  if (existing && (existing.isSymbolicLink() || !existing.isFile())) {
+    throw new Error("Yip-Yap connector storage is unavailable.");
+  }
+
+  const temporaryPath = `${configPath}.${process.pid}.${randomBytes(12).toString("hex")}.tmp`;
+  const flags = fsConstants.O_CREAT
+    | fsConstants.O_EXCL
+    | fsConstants.O_RDWR
+    | (fsConstants.O_NOFOLLOW ?? 0);
+  let descriptor;
+  try {
+    descriptor = openSync(temporaryPath, flags, 0o600);
+    fchmodSync(descriptor, 0o600);
+    writeFileSync(descriptor, `${JSON.stringify({ sessionToken })}\n`, "utf8");
+    fsyncSync(descriptor);
+    closeSync(descriptor);
+    descriptor = undefined;
+    renameSync(temporaryPath, configPath);
+  } catch {
+    if (descriptor !== undefined) {
+      try {
+        closeSync(descriptor);
+      } catch {
+        // Preserve the fixed outer storage failure.
+      }
+    }
+    try {
+      unlinkSync(temporaryPath);
+    } catch {
+      // The temp file may never have been created or may already be gone.
+    }
+    throw new Error("Yip-Yap connector storage is unavailable.");
+  }
+}
+
+function readConnectorConfigToken(configPath) {
+  let descriptor;
+  try {
+    const pathStat = lstatOrAbsent(configPath);
+    if (pathStat === null) return CONFIG_ABSENT;
+    if (
+      pathStat.isSymbolicLink()
+      || !pathStat.isFile()
+      || pathStat.size < 1
+      || pathStat.size > MAX_CONFIG_BYTES
+      || (process.platform !== "win32" && (pathStat.mode & 0o077) !== 0)
+    ) {
+      return CONFIG_INVALID;
+    }
+    descriptor = openSync(
+      configPath,
+      fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0),
+    );
+    const descriptorStat = fstatSync(descriptor);
+    if (
+      !descriptorStat.isFile()
+      || descriptorStat.dev !== pathStat.dev
+      || descriptorStat.ino !== pathStat.ino
+      || descriptorStat.size < 1
+      || descriptorStat.size > MAX_CONFIG_BYTES
+      || (process.platform !== "win32" && (descriptorStat.mode & 0o077) !== 0)
+    ) {
+      return CONFIG_INVALID;
+    }
+    const parsed = JSON.parse(readFileSync(descriptor, "utf8"));
+    if (
+      typeof parsed !== "object"
+      || parsed === null
+      || Array.isArray(parsed)
+      || Object.getPrototypeOf(parsed) !== Object.prototype
+      || JSON.stringify(Object.keys(parsed).sort()) !== JSON.stringify(["sessionToken"])
+      || typeof parsed.sessionToken !== "string"
+      || !SESSION_TOKEN.test(parsed.sessionToken)
+    ) {
+      return CONFIG_INVALID;
+    }
+    return parsed.sessionToken;
+  } catch {
+    return CONFIG_INVALID;
+  } finally {
+    if (descriptor !== undefined) {
+      try {
+        closeSync(descriptor);
+      } catch {
+        // A read failure is already represented by CONFIG_INVALID.
+      }
+    }
+  }
+}
+
+function createRedeemTransport({ fetchImpl, timeoutMs }) {
+  return async function redeem(normalizedCode) {
+    const body = JSON.stringify({ data: { pairingCode: normalizedCode } });
+    const url = `${FIREBASE_CALLABLE_BASE}/${REDEEM_CALLABLE}`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    timer.unref?.();
+    try {
+      const response = await fetchImpl(url, {
+        method: "POST",
+        headers: Object.freeze({ "content-type": "application/json" }),
+        body,
+        redirect: "error",
+        signal: controller.signal,
+      });
+      if (response.redirected === true) {
+        fail("invalid_response", "redirect_refused");
+      }
+      const responseText = await readResponseBody(response);
+      if (!response.ok) {
+        // A refusal envelope (wrong, expired, or consumed code) surfaces its
+        // fixed contract code. Redemption is never retried: a lost response
+        // after server-side consumption is ambiguous and requires a new code.
+        try {
+          parseRedeemEnvelope(responseText);
+        } catch (error) {
+          if (error instanceof ConnectorFailure && error.state !== "invalid_response") throw error;
+        }
+        fail("unavailable", "service_unavailable");
+      }
+      return parseRedeemEnvelope(responseText);
+    } catch (error) {
+      if (error instanceof ConnectorFailure) throw error;
+      fail("unavailable", "network_unavailable");
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+}
+
 function parseEmptyArguments(value) {
   const args = requireRecord(value ?? {});
   requireExactKeys(args, new Set());
@@ -944,21 +1249,42 @@ function toolFailure(error) {
   });
 }
 
-/** Create a lazy connector. Construction performs no credential read and no network I/O. */
+/**
+ * Create a lazy connector. Construction performs no credential read, no
+ * filesystem read, and no network I/O. The default token source is the
+ * connector's own 0600 config file first, then the legacy environment source
+ * only when the config is genuinely absent. The config is read per invocation,
+ * so a pairing performed mid-session supersedes stale environment state and
+ * works without a restart. Unsafe or malformed config fails closed instead of
+ * falling back to an older credential.
+ */
 export function createYipYapConnector({
   providerId,
-  getToken = () => process.env[SESSION_TOKEN_ENV],
+  configPath,
+  getToken,
   fetchImpl = globalThis.fetch,
   timeoutMs = DEFAULT_TIMEOUT_MS,
 } = {}) {
   if (!PROVIDER_IDS.has(providerId)) throw new TypeError("Unsupported Yip-Yap provider id.");
-  if (typeof getToken !== "function" || typeof fetchImpl !== "function") {
+  const resolvedConfigPath = configPath ?? connectorConfigPath(providerId);
+  if (typeof resolvedConfigPath !== "string" || resolvedConfigPath.length === 0) {
+    throw new TypeError("Yip-Yap connector config path is invalid.");
+  }
+  const resolvedGetToken = getToken ?? (() => {
+    const configured = readConnectorConfigToken(resolvedConfigPath);
+    if (configured === CONFIG_INVALID) return undefined;
+    if (configured !== CONFIG_ABSENT) return configured;
+    const legacyEnvironmentToken = process.env[SESSION_TOKEN_ENV];
+    return legacyEnvironmentToken === "" ? undefined : legacyEnvironmentToken;
+  });
+  if (typeof resolvedGetToken !== "function" || typeof fetchImpl !== "function") {
     throw new TypeError("Yip-Yap connector dependencies are invalid.");
   }
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 60_000) {
     throw new TypeError("Yip-Yap connector timeout is invalid.");
   }
-  const callCallable = createTransport({ getToken, fetchImpl, timeoutMs });
+  const callCallable = createTransport({ getToken: resolvedGetToken, fetchImpl, timeoutMs });
+  const redeemCode = createRedeemTransport({ fetchImpl, timeoutMs });
 
   async function readBinding() {
     return parseConnectionStatus(
@@ -972,6 +1298,17 @@ export function createYipYapConnector({
     async callTool(name, args = {}) {
       try {
         switch (name) {
+          case "yipyapPair": {
+            const normalizedCode = parseToolArguments(parsePairArguments, args);
+            const sessionToken = await redeemCode(normalizedCode);
+            writeConnectorConfig(resolvedConfigPath, sessionToken);
+            // The token variable dies here; the result names only the fact.
+            return toolSuccess(Object.freeze({
+              paired: true,
+              providerId,
+              message: "Paired to your Yip Yap account. The credential is stored locally and never shown.",
+            }));
+          }
           case "providerReadConnectionStatus": {
             parseToolArguments(parseEmptyArguments, args);
             const status = await readBinding();

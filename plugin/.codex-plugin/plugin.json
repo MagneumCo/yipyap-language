@@ -1,7 +1,7 @@
 {
   "name": "yipyap-language",
-  "version": "0.2.0",
-  "description": "Provider-neutral Yip-Yap language learning with automatic session bootstrap and a bounded account connector.",
+  "version": "0.2.1",
+  "description": "Provider-neutral Yip-Yap language learning with supported-host session bootstrap and a bounded account connector.",
   "author": {
     "name": "BDI Labs",
     "url": "https://github.com/bdilabs247"
@@ -15,13 +15,26 @@
     "yipyap"
   ],
   "skills": "./skills/",
-  "mcpServers": "./.codex-plugin/mcp.json",
+  "mcpServers": {
+    "yipyap-account": {
+      "command": "node",
+      "args": [
+        "mcp/server.mjs",
+        "--provider",
+        "codex"
+      ],
+      "cwd": ".",
+      "env_vars": [
+        "YIPYAP_SESSION_TOKEN"
+      ]
+    }
+  },
   "interface": {
     "displayName": "Yip-Yap Language",
-    "shortDescription": "Auto-load Yip-Yap; check setup.",
-    "longDescription": "Public read-first release with automatic fresh-session bootstrap and one shared language Skill. Its bounded connector reads verified account settings and teaching context; missing or unverified state fails closed to L0.",
+    "shortDescription": "Yip-Yap language learning",
+    "longDescription": "Public read-first release with supported-host fresh-session bootstrap and one shared language Skill. Its bounded connector reads verified account settings and teaching context; missing or unverified state fails closed to L0.",
     "developerName": "BDI Labs",
-    "category": "Education",
+    "category": "Education & Research",
     "capabilities": [
       "Read",
       "Write"
