@@ -1,0 +1,15 @@
+# Local secrets and generated state never enter the public distribution.
+/keys/
+.env
+.env.*
+*.token
+.secrets/
+
+# Local dependencies, caches, and generated output.
+node_modules/
+cache/
+logs/
+dist/
+build/
+.DS_Store
+Thumbs.db

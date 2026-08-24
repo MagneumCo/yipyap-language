@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bdilabs247/yipyap-language/blob/main/release/update-index-v1.schema.json",
+  "title": "Yip-Yap stable update index v1",
+  "$comment": "Interchange schema only. The shipped verifier is normative for canonical JSON, exact cross-field version/tag/URL binding, signatures, sequence/version monotonicity, and the 31-day expiry window.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "pluginId",
+    "channel",
+    "releaseSequence",
+    "version",
+    "releaseTag",
+    "archiveUrl",
+    "archiveSha256",
+    "manifestUrl",
+    "manifestSha256",
+    "signatureUrl",
+    "signingKeyId",
+    "minimumUpdaterVersion",
+    "expiresAt",
+    "activation"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "yipyap.update-index.v1" },
+    "pluginId": { "const": "yipyap-language" },
+    "channel": { "const": "stable" },
+    "releaseSequence": { "type": "integer", "minimum": 1 },
+    "version": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?$" },
+    "releaseTag": { "type": "string", "pattern": "^v(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?$" },
+    "archiveUrl": { "type": "string", "pattern": "^https://github\\.com/bdilabs247/yipyap-language/releases/download/v[0-9A-Za-z.-]+/yipyap-language-[0-9A-Za-z.-]+\\.tar$" },
+    "archiveSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "manifestUrl": { "type": "string", "pattern": "^https://github\\.com/bdilabs247/yipyap-language/releases/download/v[0-9A-Za-z.-]+/manifest\\.json$" },
+    "manifestSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "signatureUrl": { "type": "string", "pattern": "^https://github\\.com/bdilabs247/yipyap-language/releases/download/v[0-9A-Za-z.-]+/manifest\\.sig$" },
+    "signingKeyId": { "const": "yipyap-release-ed25519-v1" },
+    "minimumUpdaterVersion": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?$" },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "activation": { "const": "restart-new-root" }
+  }
+}

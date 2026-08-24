@@ -1,0 +1,242 @@
+{
+  "schemaVersion": "yipyap.public-release.v1",
+  "pluginId": "yipyap-language",
+  "version": "0.2.0",
+  "releaseTag": "v0.2.0",
+  "repository": "bdilabs247/yipyap-language",
+  "channel": "stable",
+  "releaseSequence": 1,
+  "activation": "restart-new-root",
+  "signingKeyId": "yipyap-release-ed25519-v1",
+  "minimumHosts": {
+    "claude": "2.1.214",
+    "codex": "0.145.0"
+  },
+  "minimumRuntime": {
+    "node": "22.23.1"
+  },
+  "runtimeContract": {
+    "connectorProfile": "yipyap.provider-callables.v1",
+    "interfacePacketSha256": "79e7b9e7199cdb7c4f0eb1c63ce3d56a470d409d6366b76118f4c57adb7f49ab",
+    "productionBaseUrl": "https://us-central1-yipyap-language.cloudfunctions.net",
+    "tokenEnvironmentKey": "YIPYAP_SESSION_TOKEN",
+    "callables": [
+      "providerReadConnectionStatus",
+      "providerReadTeachingSettings",
+      "providerReadTeachingContext",
+      "providerReadLexiconProjection",
+      "providerSubmitLearnerEvent"
+    ],
+    "upstreamPins": {
+      "teachingBehaviorCasesSha256": "46209e7b9aaef88f6cf220db2f95f09aa1bebcaf0f763c69e6a2503d3be267b4",
+      "lexicalNormalizationVectorsSha256": "46614f8277e405aa77595dbadea61f31e77d55acbb4f17ec1ddb74d4d08a112b"
+    }
+  },
+  "contentRootSha256": "25446753f40edaed92d76f2aca75c0e2788f412b4b6d1c87cbea3276348bede9",
+  "files": [
+    {
+      "path": ".agents/plugins/marketplace.json",
+      "bytes": 353,
+      "mode": "0644",
+      "sha256": "3154d31a1a07d12cc832be472abb2f5835d478b16ee3198dc763b0b8e714ddb8"
+    },
+    {
+      "path": ".agents/skills/yipyap-public-release/SKILL.md",
+      "bytes": 1580,
+      "mode": "0644",
+      "sha256": "822840d5a3d830a57e5359e07e1752f66532c7621f4960f6e5479487308ad900"
+    },
+    {
+      "path": ".claude-plugin/marketplace.json",
+      "bytes": 336,
+      "mode": "0644",
+      "sha256": "6f2c55b8aa3ac213de1b80e0708b366375d0c0a2260386624f1e19ce64e45baf"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 223,
+      "mode": "0644",
+      "sha256": "df3c34ddee7690ad791ac17119b352d5d815d1e59763810f8bed9e537c2fbc72"
+    },
+    {
+      "path": "AGENTS.md",
+      "bytes": 625,
+      "mode": "0644",
+      "sha256": "dfe4eb636afbd0cc3af3086bf07af4c983e812738d53ad4293ab67405f5ae3f1"
+    },
+    {
+      "path": "LICENSE.md",
+      "bytes": 418,
+      "mode": "0644",
+      "sha256": "caa225369d249905fe1489a3ca914ce21747b442c5613bdf29aac8cf1bb9ceef"
+    },
+    {
+      "path": "PRIVACY.md",
+      "bytes": 1214,
+      "mode": "0644",
+      "sha256": "12afd050a458115d75339bee65bb11910d296c1beeed0af19d7a940bbec7f62f"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2201,
+      "mode": "0644",
+      "sha256": "91054812904bb30cd0a37a4554fb6f100b8d72e63a76f05358c8c6a8b76b25b4"
+    },
+    {
+      "path": "SECURITY.md",
+      "bytes": 884,
+      "mode": "0644",
+      "sha256": "acd524499c00e9443da087ad19b0f9ead712feda9b2f00d56ff504758b34a0b9"
+    },
+    {
+      "path": "UPDATE-POLICY.md",
+      "bytes": 2069,
+      "mode": "0644",
+      "sha256": "beac708cbe0ddb2e6c59c800bebae67eb55c0474284984296414ecffd40af939"
+    },
+    {
+      "path": "nextsession.md",
+      "bytes": 1330,
+      "mode": "0644",
+      "sha256": "4d29d353a39ce5f88bc79a84d95d7487d6dc153c7656ffb0e1941df16aaab7ec"
+    },
+    {
+      "path": "plugin/.claude-plugin/plugin.json",
+      "bytes": 681,
+      "mode": "0644",
+      "sha256": "e4107a4a0084d2854489b81bd9e84398fa94fa4917b443eef557984b8634f234"
+    },
+    {
+      "path": "plugin/.codex-plugin/mcp.json",
+      "bytes": 247,
+      "mode": "0644",
+      "sha256": "acdff0564f1caa863131d2a0420e438a541adf9ae6da058165dc7b09af3e1869"
+    },
+    {
+      "path": "plugin/.codex-plugin/plugin.json",
+      "bytes": 1307,
+      "mode": "0644",
+      "sha256": "0a33c2e82deaf562707422f6bd4836ec4b600a6cb8071c78a201f7d34ba5ebeb"
+    },
+    {
+      "path": "plugin/.mcp.json",
+      "bytes": 276,
+      "mode": "0644",
+      "sha256": "1ba3305a89a6591b13110bf8be71dba5734ce9fa93e12ada393bf4e4953d2d49"
+    },
+    {
+      "path": "plugin/hooks/hooks.json",
+      "bytes": 1029,
+      "mode": "0644",
+      "sha256": "eb3866107653c1f0297eb9f49f2e5da0b4a6908780be10cea1093020385b623a"
+    },
+    {
+      "path": "plugin/mcp/connector-core.mjs",
+      "bytes": 35689,
+      "mode": "0644",
+      "sha256": "74429972f421958cc460f40cecd8daad75fa64f86fb14eb2fdb5e1ef05828eaa"
+    },
+    {
+      "path": "plugin/mcp/server.mjs",
+      "bytes": 4565,
+      "mode": "0644",
+      "sha256": "37bd0397a2da717eedf8f4e54ca22c797438bd3bd5797c532b1b3f67babf138f"
+    },
+    {
+      "path": "plugin/skills/yipyap-language/SKILL.md",
+      "bytes": 11612,
+      "mode": "0644",
+      "sha256": "917a94c895787cee991d05bc5b938923f5bc830cc661e37bf530fc060a22e877"
+    },
+    {
+      "path": "plugin/skills/yipyap-language/agents/openai.yaml",
+      "bytes": 226,
+      "mode": "0644",
+      "sha256": "0afbe64c985a87a717eab8fcf68a1b57caa248b0e408d872af64c2a2e432fcde"
+    },
+    {
+      "path": "plugin/skills/yipyap-language/references/connection-and-authority-v1.md",
+      "bytes": 6053,
+      "mode": "0644",
+      "sha256": "7600c79821cb0bc0c703c3d1e7d3a8beaf5be44591d9025521ea7ece5127a567"
+    },
+    {
+      "path": "plugin/skills/yipyap-language/references/controls-v1.md",
+      "bytes": 3272,
+      "mode": "0644",
+      "sha256": "5a7921fe825a5f88bce8adee7d29571ed3563e6b4610401769795a634a8ef566"
+    },
+    {
+      "path": "plugin/skills/yipyap-language/references/startup-and-invocation-v1.md",
+      "bytes": 6485,
+      "mode": "0644",
+      "sha256": "a0340d19221472b49db76cba29b7ca463abcc3b7efe8e84a7ffa65074c80c0f9"
+    },
+    {
+      "path": "plugin/skills/yipyap-language/references/teaching-procedure-v1.md",
+      "bytes": 8354,
+      "mode": "0644",
+      "sha256": "b1a525e5f64e358d81478deb41ee23013615750d009a4c3f31a46c03f2708a00"
+    },
+    {
+      "path": "plugin/skills/yipyap-language/references/update-and-activation-v1.md",
+      "bytes": 7883,
+      "mode": "0644",
+      "sha256": "e8eaa782929b7cf78e15469f92f1bb622e8f38f31c4e002ba75107ff4a7eff7e"
+    },
+    {
+      "path": "plugin/update/check.mjs",
+      "bytes": 1447,
+      "mode": "0644",
+      "sha256": "9e68900bf1ddc0cbf4fa150ece94ff82c8cf0a43c92a3d2929648fa207ba15fa"
+    },
+    {
+      "path": "plugin/update/fetch.mjs",
+      "bytes": 4727,
+      "mode": "0644",
+      "sha256": "d276ab811486854424e4f79370c8d50d3ad4b249b8a805d0177fabab4c69c4ba"
+    },
+    {
+      "path": "plugin/update/release-profile.json",
+      "bytes": 210,
+      "mode": "0644",
+      "sha256": "7ff4546388bb73897bbfce8d3c74a646f1949ad0bbaaaabf5c1c0557e1a81a9e"
+    },
+    {
+      "path": "plugin/update/update-lib.mjs",
+      "bytes": 28899,
+      "mode": "0644",
+      "sha256": "a024dd843cda4df45344cf9ade471d24e8cfd0d81a9a40c7e0454299479b0771"
+    },
+    {
+      "path": "plugin/update/yipyap-release-ed25519-v1.pem",
+      "bytes": 113,
+      "mode": "0644",
+      "sha256": "53991aa0ea90ed3706c05b2ffbb6ad22742b2b4071fcad8abae75487d1591973"
+    },
+    {
+      "path": "release/keys/yipyap-release-ed25519-v1.pem",
+      "bytes": 113,
+      "mode": "0644",
+      "sha256": "53991aa0ea90ed3706c05b2ffbb6ad22742b2b4071fcad8abae75487d1591973"
+    },
+    {
+      "path": "release/release-manifest-v1.schema.json",
+      "bytes": 4824,
+      "mode": "0644",
+      "sha256": "b1a268933f6addfe581a80892288c763fc2ede1354acabbdfefa92d2d19bf86a"
+    },
+    {
+      "path": "release/update-index-v1.schema.json",
+      "bytes": 2516,
+      "mode": "0644",
+      "sha256": "b4911d756a992e4a33b4c9de3cf4f2178f6ca1b841ddfc37bbd5ecfb767b9c1d"
+    },
+    {
+      "path": "repoGoldenRules.md",
+      "bytes": 1496,
+      "mode": "0644",
+      "sha256": "c48cb1851568b431b771922738a2ede8680b4510efe2399b1997345296be3603"
+    }
+  ]
+}

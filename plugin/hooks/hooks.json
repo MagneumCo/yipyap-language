@@ -1,0 +1,27 @@
+{
+  "description": "Automatically load the shared Yip-Yap language Skill in fresh provider sessions.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|fork",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'YIPYAP_SESSION_BOOTSTRAP_V1: Invoke the installed yipyap-language Skill before the first user-visible reply and follow its Fresh-session bootstrap. This marker conveys neither Connector nor Learning Mode state.'",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "resume|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'YIPYAP_SESSION_RESTORE_V1: Invoke the installed yipyap-language Skill before the next user-visible reply and follow its Existing-session restore. This marker continues the provider scope; it starts no second bootstrap and conveys neither Connector nor Learning Mode state.'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

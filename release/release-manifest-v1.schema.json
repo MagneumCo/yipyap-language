@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bdilabs247/yipyap-language/blob/main/release/release-manifest-v1.schema.json",
+  "title": "Yip-Yap public release manifest v1",
+  "$comment": "Interchange schema only. The shipped verifier is normative for canonical JSON, bytewise path ordering, case-fold collisions, ancestor-file conflicts, content-root recomputation, exact identity parity, and total byte bounds.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "pluginId",
+    "version",
+    "releaseTag",
+    "repository",
+    "channel",
+    "releaseSequence",
+    "activation",
+    "signingKeyId",
+    "minimumHosts",
+    "minimumRuntime",
+    "runtimeContract",
+    "contentRootSha256",
+    "files"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "yipyap.public-release.v1" },
+    "pluginId": { "const": "yipyap-language" },
+    "version": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?$" },
+    "releaseTag": { "type": "string", "pattern": "^v(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?$" },
+    "repository": { "const": "bdilabs247/yipyap-language" },
+    "channel": { "const": "stable" },
+    "releaseSequence": { "type": "integer", "minimum": 1 },
+    "activation": { "const": "restart-new-root" },
+    "signingKeyId": { "const": "yipyap-release-ed25519-v1" },
+    "minimumHosts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claude", "codex"],
+      "properties": {
+        "claude": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?$" },
+        "codex": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?$" }
+      }
+    },
+    "minimumRuntime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["node"],
+      "properties": {
+        "node": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?$" }
+      }
+    },
+    "runtimeContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "connectorProfile",
+        "interfacePacketSha256",
+        "productionBaseUrl",
+        "tokenEnvironmentKey",
+        "callables",
+        "upstreamPins"
+      ],
+      "properties": {
+        "connectorProfile": { "const": "yipyap.provider-callables.v1" },
+        "interfacePacketSha256": { "const": "79e7b9e7199cdb7c4f0eb1c63ce3d56a470d409d6366b76118f4c57adb7f49ab" },
+        "productionBaseUrl": { "const": "https://us-central1-yipyap-language.cloudfunctions.net" },
+        "tokenEnvironmentKey": { "const": "YIPYAP_SESSION_TOKEN" },
+        "callables": {
+          "const": [
+            "providerReadConnectionStatus",
+            "providerReadTeachingSettings",
+            "providerReadTeachingContext",
+            "providerReadLexiconProjection",
+            "providerSubmitLearnerEvent"
+          ]
+        },
+        "upstreamPins": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["teachingBehaviorCasesSha256", "lexicalNormalizationVectorsSha256"],
+          "properties": {
+            "teachingBehaviorCasesSha256": { "const": "46209e7b9aaef88f6cf220db2f95f09aa1bebcaf0f763c69e6a2503d3be267b4" },
+            "lexicalNormalizationVectorsSha256": { "const": "46614f8277e405aa77595dbadea61f31e77d55acbb4f17ec1ddb74d4d08a112b" }
+          }
+        }
+      }
+    },
+    "contentRootSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "bytes", "mode", "sha256"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)(?!.*(?:^|/)\\.git(?:/|$))[A-Za-z0-9._/-]+$" },
+          "bytes": { "type": "integer", "minimum": 0, "maximum": 2097152 },
+          "mode": { "const": "0644" },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    }
+  }
+}

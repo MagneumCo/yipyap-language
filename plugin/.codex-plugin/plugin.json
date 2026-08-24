@@ -1,0 +1,35 @@
+{
+  "name": "yipyap-language",
+  "version": "0.2.0",
+  "description": "Provider-neutral Yip-Yap language learning with automatic session bootstrap and a bounded account connector.",
+  "author": {
+    "name": "BDI Labs",
+    "url": "https://github.com/bdilabs247"
+  },
+  "homepage": "https://github.com/bdilabs247/yipyap-language",
+  "repository": "https://github.com/bdilabs247/yipyap-language",
+  "license": "Proprietary",
+  "keywords": [
+    "language-learning",
+    "immersion",
+    "yipyap"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.codex-plugin/mcp.json",
+  "interface": {
+    "displayName": "Yip-Yap Language",
+    "shortDescription": "Auto-load Yip-Yap; check setup.",
+    "longDescription": "Public read-first release with automatic fresh-session bootstrap and one shared language Skill. Its bounded connector reads verified account settings and teaching context; missing or unverified state fails closed to L0.",
+    "developerName": "BDI Labs",
+    "category": "Education",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use $yipyap-language to show my current Yip-Yap setup status.",
+      "Use $yipyap-language to explain how Yip-Yap language levels work.",
+      "Use $yipyap-language to check whether Yip-Yap language is connected."
+    ]
+  }
+}

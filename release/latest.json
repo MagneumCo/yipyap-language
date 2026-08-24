@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "yipyap.update-index.v1",
+  "pluginId": "yipyap-language",
+  "channel": "stable",
+  "releaseSequence": 1,
+  "version": "0.2.0",
+  "releaseTag": "v0.2.0",
+  "archiveUrl": "https://github.com/bdilabs247/yipyap-language/releases/download/v0.2.0/yipyap-language-0.2.0.tar",
+  "archiveSha256": "a0a70e202f76f72eea12be62421dc406e1b14b90620c61466bd7b2e40c45d809",
+  "manifestUrl": "https://github.com/bdilabs247/yipyap-language/releases/download/v0.2.0/manifest.json",
+  "manifestSha256": "0fb915109616f93eb4615c544a6233f62cac3d45e283b4f2e4ae8a8361686e0f",
+  "signatureUrl": "https://github.com/bdilabs247/yipyap-language/releases/download/v0.2.0/manifest.sig",
+  "signingKeyId": "yipyap-release-ed25519-v1",
+  "minimumUpdaterVersion": "1.0.0",
+  "expiresAt": "2026-09-22T01:18:59.000Z",
+  "activation": "restart-new-root"
+}
