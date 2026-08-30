@@ -34,6 +34,6 @@ try {
   }, null, 2)}\n`);
 } catch (error) {
   const code = error instanceof UpdateError ? error.code : "unexpected";
-  process.stderr.write(`Yip-Yap update check failed [${code}]\n`);
+  process.stderr.write(`YipYap update check failed [${code}]\n`);
   process.exitCode = 1;
 }

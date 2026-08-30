@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/bdilabs247/yipyap-language/blob/main/release/update-index-v1.schema.json",
-  "title": "Yip-Yap stable update index v1",
+  "title": "YipYap stable update index v1",
   "$comment": "Interchange schema only. The shipped verifier is normative for canonical JSON, exact cross-field version/tag/URL binding, signatures, sequence/version monotonicity, and the 31-day expiry window.",
   "type": "object",
   "additionalProperties": false,

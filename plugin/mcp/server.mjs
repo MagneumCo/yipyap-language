@@ -119,12 +119,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   try {
     connector = createYipYapConnector({ providerId: providerFromArgv(process.argv.slice(2)) });
   } catch {
-    process.stderr.write("Yip-Yap connector configuration is invalid.\n");
+    process.stderr.write("YipYap connector configuration is invalid.\n");
     process.exitCode = 2;
   }
   if (connector) {
     runStdioServer({ stdin: process.stdin, stdout: process.stdout, connector }).catch(() => {
-      process.stderr.write("Yip-Yap connector stopped after an input or transport failure.\n");
+      process.stderr.write("YipYap connector stopped after an input or transport failure.\n");
       process.exitCode = 1;
     });
   }

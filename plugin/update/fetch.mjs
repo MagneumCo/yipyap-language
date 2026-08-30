@@ -126,6 +126,6 @@ try {
 } catch (error) {
   if (staging && existsSync(staging)) rmSync(staging, { recursive: true, force: false });
   const code = error instanceof UpdateError ? error.code : "unexpected";
-  process.stderr.write(`Yip-Yap update fetch failed [${code}]\n`);
+  process.stderr.write(`YipYap update fetch failed [${code}]\n`);
   process.exitCode = 1;
 }

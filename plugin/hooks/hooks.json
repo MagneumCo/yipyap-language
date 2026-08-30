@@ -1,5 +1,5 @@
 {
-  "description": "Automatically load the shared Yip-Yap language Skill in fresh provider sessions.",
+  "description": "Automatically load the shared YipYap (Language) Skill in fresh provider sessions.",
   "hooks": {
     "SessionStart": [
       {

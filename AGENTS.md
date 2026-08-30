@@ -1,6 +1,6 @@
-# Agent operating contract — Yip-Yap Language public distribution
+# Agent operating contract — YipYap (Language) public distribution
 
-This repository is the generated public distribution of Yip-Yap Language.
+This repository is the generated public distribution of YipYap (Language).
 Read `README.md`, `repoGoldenRules.md`, and `nextsession.md` before changing it.
 
 - Do not hand-edit generated release payloads.

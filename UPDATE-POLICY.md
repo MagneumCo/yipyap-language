@@ -1,24 +1,27 @@
 # Update policy
 
-Yip-Yap publishes immutable versioned releases. Replacement assets are not an
-update mechanism. The stable-channel pointer is signed, expires no more than 31
-days ahead, and names the exact release manifest and archive digests.
+YipYap (Language) publishes immutable versioned releases. Replacement assets are
+not an update mechanism. The stable-channel pointer is signed, expires no more
+than 31 days ahead, and names the exact release manifest and archive digests.
 
 Signed self-update assumes a previously trusted installation. For first
-install, the Yip-Yap app supplies the release-key pin independently and verifies
+install, the YipYap app supplies the release-key pin independently and verifies
 the immutable bundle. A public key downloaded from the same untrusted package
 cannot authenticate that package.
 
 Immutable v0.2.0 exact-pins the pre-pairing interface packet, so its updater
 correctly rejects v0.2.1 and must not be weakened. Cross that one-time contract
-boundary only with a fresh v0.2.1 install or a provider-native or Yip-Yap
+boundary only with a fresh v0.2.1 install or a provider-native or YipYap
 app-controlled reinstall of its signed immutable release. Later releases that
 retain the installed interface contract follow the normal signed sequence
 rules below.
 
+Version 0.2.2 retains the v0.2.1 interface contract and is therefore a normal
+higher-sequence signed update from v0.2.1.
+
 Update checking is separate from provider startup. The lifecycle hook never
 contacts GitHub or changes installed files. A separately trusted,
-Yip-Yap-controlled surface may check automatically on a bounded cadence or for
+YipYap-controlled surface may check automatically on a bounded cadence or for
 an explicit status request. Version 1 never applies an update automatically.
 
 The current checker/fetcher verifies signed index/archive/manifest records,

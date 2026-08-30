@@ -1,9 +1,9 @@
 ---
 name: yipyap-public-release
-description: Review the generated Yip-Yap Language public distribution and its signed release boundary. Use for public release inspection, not product development or account operations.
+description: Review the generated YipYap (Language) public distribution and its signed release boundary. Use for public release inspection, not product development or account operations.
 ---
 
-# Yip-Yap public release
+# YipYap public release
 
 Treat this repository as generated output. Do not hand-edit the plugin payload
 or manufacture a release record.

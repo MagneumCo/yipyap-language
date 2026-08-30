@@ -1,35 +1,35 @@
-# Yip-Yap Language setup
+# YipYap (Language) setup
 
 This guide covers the packaged local connector used by supported Claude and
 Codex hosts. It does not claim that either public provider directory has
-published Yip-Yap Language.
+published YipYap (Language).
 
 ## Requirements
 
 - Node.js 22.23.1 or later within major version 22
   (`>=22.23.1 <23`).
-- A supported host with the Yip-Yap Language plugin installed and enabled.
-- A Yip Yap account managed through the Yip Yap app.
+- A supported host with the YipYap (Language) plugin installed and enabled.
+- A YipYap account managed through the YipYap app.
 - Network access to the fixed production connector service.
 
 Starting without an account connection is valid. The Skill remains useful for
 explaining its teaching model and for direct language questions, but it uses
-effective L0 and introduces no account-selected Yip-Yap items.
+effective L0 and introduces no account-selected YipYap items.
 
 ## Pair without exposing a session token
 
 The supported setup path is app-led pairing:
 
-1. In the Yip Yap app, begin its AI-connection flow for the provider you are
+1. In the YipYap app, begin its AI-connection flow for the provider you are
    connecting.
 2. Obtain the short, one-time pairing code supplied by that flow.
-3. Ask the provider host to connect Yip-Yap Language and provide only that
+3. Ask the provider host to connect YipYap (Language) and provide only that
    one-time code through the host's supported plugin invocation path.
 4. The connector's `yipyapPair` operation normalizes and redeems the code at
    the fixed service. It stores the returned session credential in its own
    provider-specific local configuration and returns only whether pairing
    succeeded.
-5. Ask Yip-Yap Language for setup status. Treat the account as Connected only
+5. Ask YipYap (Language) for setup status. Treat the account as Connected only
    after a fresh binding round trip validates the provider, required scopes,
    and convergence state.
 
@@ -51,8 +51,10 @@ evidence that those production gates are live.
 ## L0 is the fail-closed state
 
 Every non-ready path settles the complete reply at effective L0. The plugin
-does not reuse old vocabulary, reconstruct state from chat history, queue a
-write, or promise replay.
+does not reuse old vocabulary, reconstruct state from chat history, create a
+durable write queue, or promise replay. The bounded ephemeral generated-item
+set is not teaching input; it flushes only when a teaching-ready connection
+also grants `lexicon.propose`, and losing it is acceptable.
 
 | Observed state | Required behavior |
 | --- | --- |
@@ -64,12 +66,24 @@ write, or promise replay.
 | Unavailable | The service, network, or safe response carrier cannot complete. Remain at L0 and do not use cached teaching context. |
 
 Connected does not mean Learning Mode is on. Learning Mode is an account-holder
-control on a Yip Yap-controlled surface and is evaluated privately by the
+control on a YipYap-controlled surface and is evaluated privately by the
 service.
+
+Every potentially mixed reply runs a new status → settings → context cycle.
+The connector keeps only a bounded process-memory guard while those calls and
+at most two following proposal attempts complete. It may contain a one-way
+credential digest, raw service binding, settings or verified track, and a
+remaining count; it never reaches model output, stores no conversation or
+vocabulary tuple, writes nowhere, and clears on a new status cycle, pairing,
+completion, or failure.
+
+Target and instruction language pairs must satisfy the packet's bounded BCP 47
+tag plus explicit matching-script grammar. The plugin does not infer language
+from locale and has no Spanish- or English-only allowlist.
 
 ## Revoke or reconnect
 
-Revoke provider access from the Yip Yap app or another Yip Yap-controlled
+Revoke provider access from the YipYap app or another YipYap-controlled
 account surface. The provider plugin has no operation that grants or revokes
 account scopes. A revoked credential must fail the next fresh connector call,
 produce Needs reconnect, and keep the reply at effective L0.
@@ -85,7 +99,7 @@ credential without exposing it to the model.
 ### The plugin is installed but does not start automatically
 
 The current surface may not run packaged lifecycle hooks, or the hook may be
-disabled or untrusted. Invoke Yip-Yap Language explicitly and ask it to check
+disabled or untrusted. Invoke YipYap explicitly and ask it to check
 the connection. Do not report automatic-start parity until that exact host has
 passed a fresh-root test.
 
@@ -98,7 +112,7 @@ token.
 ### The connector reports Needs reconnect
 
 The previous capability is no longer valid for this provider installation.
-Use the Yip Yap app to review or revoke the old connection, then pair again
+Use the YipYap app to review or revoke the old connection, then pair again
 with a new one-time code. No teaching context may be reused while reconnecting.
 
 ### The connector reports Unavailable
@@ -120,7 +134,7 @@ Confirm that the host is using Node.js `>=22.23.1 <23` and that the plugin is
 enabled. A different Node major version is outside this package's declared
 runtime contract.
 
-## One-time upgrade from v0.2.0
+## Upgrade compatibility
 
 Version 0.2.1 pins the app's amended connector-interface packet that introduced
 one-time-code pairing. The immutable v0.2.0 updater correctly refuses a release
@@ -128,17 +142,30 @@ whose interface packet differs from its own exact pin. Do not weaken that check
 or edit an installed package to get around it.
 
 Cross this one-time boundary with a fresh v0.2.1 install or a provider-native or
-Yip Yap app-controlled reinstall of the immutable signed release. The external
+YipYap app-controlled reinstall of the immutable signed release. The external
 provider-specific connector config is not part of the versioned package. After
 installation, pair with a new app-issued code and verify a fresh Connected
-status. Future same-contract updates continue to use the signed sequence rules.
+status.
+
+Version 0.2.2 retains the v0.2.1 interface packet and is therefore a normal
+same-contract signed sequence update from v0.2.1. It narrows the provider event
+schema to the five Rule 43 kinds; it does not add account authority. Future
+same-contract updates continue to use the signed sequence rules.
 
 ## Public-directory boundary
 
-The OpenAI public-directory topology requires an app-owned production HTTPS
-MCP endpoint, supported authentication, domain verification, and reviewer-safe
-credentials or sample data. Those are service gates, not features supplied by
-this local setup guide. Claude public-directory review likewise requires a
-working app-led pairing path and reviewer-safe evidence. Until the relevant
-provider publishes the reviewed card, repository or local installation is a
-separate distribution path.
+The real OpenAI install path is a public MCP+Skill plugin submitted through the
+OpenAI plugin portal, not a copied developer-mode connection. Create the
+submission from the production MCP URL `https://bdilabs.dev/mcp`, scan its five
+tools, attach the reviewed YipYap (Language) Skill bytes, complete publisher and
+domain verification, and use reviewer-safe credentials plus the approved five
+positive and three negative cases. Do not derive a public `.app.json`, plugin
+identifier, or submission artifact from a `plugin_asdk_app` developer-mode id;
+OpenAI creates the public listing from the submitted production server.
+
+Developer mode remains only a pre-submission test surface. No portal submit,
+review approval, publish act, public directory card, or directory install is
+claimed until its separate owner gate and retained receipt exist. Claude public
+directory review likewise requires a working app-led pairing path and
+reviewer-safe evidence. Repository or local installation remains a separate
+distribution path.

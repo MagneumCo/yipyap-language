@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import {
   chmodSync,
   closeSync,
@@ -18,7 +18,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
 /**
- * Yip-Yap account connector v1.
+ * YipYap account connector v1.
  *
  * This module is deliberately dependency-free. It owns the narrow trust
  * boundary between an MCP host, the app-led pairing callable, and the five
@@ -30,7 +30,7 @@ import { dirname, join } from "node:path";
 export const FIREBASE_CALLABLE_BASE =
   "https://us-central1-yipyap-language.cloudfunctions.net";
 export const SESSION_TOKEN_ENV = "YIPYAP_SESSION_TOKEN";
-export const CONNECTOR_VERSION = "0.2.1";
+export const CONNECTOR_VERSION = "0.2.2";
 
 /**
  * Pairing: the app's Connect flow shows a short single-use code; this
@@ -115,14 +115,30 @@ const ERROR_CODES = new Set([
   "scope_denied",
   "unauthenticated",
 ]);
+// Rule 43: a provider host cannot claim a YipYap-controlled review
+// interaction. Keep the two review-only contract kinds structurally absent
+// from both discovery and request parsing instead of relying on a later scope
+// refusal.
+const PROVIDER_EVENT_KINDS = Object.freeze([
+  "item_proposed",
+  "item_edited",
+  "item_archived",
+  "item_rendered",
+  "playback_completed",
+]);
 const AUTHORITY_BY_KIND = Object.freeze({
   item_proposed: "provider-suggestion",
   item_edited: "learner-confirmation",
   item_archived: "learner-confirmation",
   item_rendered: "provider-render-report",
   playback_completed: "provider-render-report",
-  response_submitted: "yipyap-review-interaction",
-  answer_revealed: "yipyap-review-interaction",
+});
+const REQUIRED_SCOPE_BY_EVENT_KIND = Object.freeze({
+  item_proposed: "lexicon.propose",
+  item_edited: "lexicon.write",
+  item_archived: "lexicon.write",
+  item_rendered: "events.render",
+  playback_completed: "events.render",
 });
 const PAYLOAD_KINDS = new Set(["item_proposed", "item_edited"]);
 const MUTATING_KINDS = new Set(["item_edited", "item_archived"]);
@@ -131,6 +147,12 @@ const MAX_RESPONSE_BYTES = 1024 * 1024;
 const MAX_REQUEST_BYTES = 64 * 1024;
 const MAX_CONFIG_BYTES = 1024;
 const DEFAULT_TIMEOUT_MS = 15_000;
+const MAX_LEXICON_RESULT_ROWS = 200;
+const LEXICON_READ_REQUEST_SCHEMA = "yipyap.lexicon-read-request.v1";
+const RECENT_WINDOW_MILLISECONDS = Object.freeze({
+  day: 24 * 60 * 60 * 1000,
+  week: 7 * 24 * 60 * 60 * 1000,
+});
 const CONFIG_ABSENT = Symbol("yipyap-config-absent");
 const CONFIG_INVALID = Symbol("yipyap-config-invalid");
 
@@ -150,11 +172,34 @@ const CONTEXT_INPUT_SCHEMA = Object.freeze({
 });
 
 const PROJECTION_INPUT_SCHEMA = Object.freeze({
-  type: "object",
-  properties: Object.freeze({
-    cursor: Object.freeze({ type: "string", pattern: "^cur_[A-Za-z0-9_-]{16,252}$" }),
-  }),
-  additionalProperties: false,
+  oneOf: Object.freeze([
+    Object.freeze({
+      type: "object",
+      properties: Object.freeze({
+        cursor: Object.freeze({ type: "string", pattern: "^cur_[A-Za-z0-9_-]{16,252}$" }),
+      }),
+      additionalProperties: false,
+    }),
+    Object.freeze({
+      type: "object",
+      properties: Object.freeze({
+        schema: Object.freeze({ const: LEXICON_READ_REQUEST_SCHEMA }),
+        view: Object.freeze({ const: "recent" }),
+        window: Object.freeze({ enum: Object.freeze(["day", "week"]) }),
+      }),
+      required: Object.freeze(["schema", "view", "window"]),
+      additionalProperties: false,
+    }),
+    Object.freeze({
+      type: "object",
+      properties: Object.freeze({
+        schema: Object.freeze({ const: LEXICON_READ_REQUEST_SCHEMA }),
+        view: Object.freeze({ const: "summary" }),
+      }),
+      required: Object.freeze(["schema", "view"]),
+      additionalProperties: false,
+    }),
+  ]),
 });
 
 const EVENT_INPUT_SCHEMA = Object.freeze({
@@ -166,7 +211,7 @@ const EVENT_INPUT_SCHEMA = Object.freeze({
         "A learner-event intent. The connector derives contract, authority, binding, server, and identity fields.",
       additionalProperties: false,
       properties: Object.freeze({
-        kind: Object.freeze({ enum: Object.freeze(Object.keys(AUTHORITY_BY_KIND)) }),
+        kind: Object.freeze({ enum: PROVIDER_EVENT_KINDS }),
         languageTag: Object.freeze({ type: "string", maxLength: 63 }),
         script: Object.freeze({ type: "string", pattern: "^[A-Z][a-z]{3}$" }),
         personalItemId: Object.freeze({ type: ["string", "null"] }),
@@ -201,7 +246,7 @@ const PAIR_INPUT_SCHEMA = Object.freeze({
       type: "string",
       minLength: 1,
       maxLength: 32,
-      description: "The short code shown on the Yip Yap app's Connect screen (like 4K7Q-9DPM).",
+      description: "The short code shown on the YipYap app's Connect screen (like 4K7Q-9DPM).",
     }),
   }),
   required: Object.freeze(["pairingCode"]),
@@ -211,9 +256,9 @@ const PAIR_INPUT_SCHEMA = Object.freeze({
 export const CONNECTOR_TOOLS = Object.freeze([
   Object.freeze({
     name: "yipyapPair",
-    title: "Pair Yip Yap",
+    title: "Pair YipYap",
     description:
-      "Redeem a one-time Yip Yap pairing code from the app's Connect screen. Stores the session credential in the connector's local config; the credential is never shown.",
+      "Redeem a one-time YipYap pairing code from the app's Connect screen. Stores the session credential in the connector's local config; the credential is never shown.",
     inputSchema: PAIR_INPUT_SCHEMA,
     annotations: Object.freeze({
       readOnlyHint: false,
@@ -224,8 +269,8 @@ export const CONNECTOR_TOOLS = Object.freeze([
   }),
   Object.freeze({
     name: "providerReadConnectionStatus",
-    title: "Read Yip Yap connection",
-    description: "Read model-safe connection scopes and convergence status. Returns no binding IDs.",
+    title: "Read YipYap connection",
+    description: "Start the current reply's binding-coherent read cycle and return model-safe scopes plus convergence status. Returns no binding IDs.",
     inputSchema: EMPTY_INPUT_SCHEMA,
     annotations: Object.freeze({
       readOnlyHint: true,
@@ -237,7 +282,7 @@ export const CONNECTOR_TOOLS = Object.freeze([
   Object.freeze({
     name: "providerReadTeachingSettings",
     title: "Read teaching settings",
-    description: "Read the bounded Yip-Yap teaching settings projection.",
+    description: "Continue the current same-credential read cycle and return the bounded YipYap teaching settings projection. Connection status must run first.",
     inputSchema: EMPTY_INPUT_SCHEMA,
     annotations: Object.freeze({
       readOnlyHint: true,
@@ -249,7 +294,7 @@ export const CONNECTOR_TOOLS = Object.freeze([
   Object.freeze({
     name: "providerReadTeachingContext",
     title: "Read teaching context",
-    description: "Read a bounded teaching context using content-free per-reply zone signals.",
+    description: "Complete the current same-credential read cycle with bounded teaching context using content-free per-reply zone signals. Status and settings must run first.",
     inputSchema: CONTEXT_INPUT_SCHEMA,
     annotations: Object.freeze({
       readOnlyHint: true,
@@ -261,7 +306,8 @@ export const CONNECTOR_TOOLS = Object.freeze([
   Object.freeze({
     name: "providerReadLexiconProjection",
     title: "Read lexicon page",
-    description: "Read one bounded page of the account lexicon projection.",
+    description:
+      "Read one legacy bounded lexicon page or one exact recent-capture or summary view. This read never reports teaching standing or learner evidence.",
     inputSchema: PROJECTION_INPUT_SCHEMA,
     annotations: Object.freeze({
       readOnlyHint: true,
@@ -274,7 +320,7 @@ export const CONNECTOR_TOOLS = Object.freeze([
     name: "providerSubmitLearnerEvent",
     title: "Submit learner event",
     description:
-      "Submit one bounded learner event. Binding, event, idempotency, and proposal identities are minted or injected internally.",
+      "Submit one bounded provider event under its fresh scope. An item_proposed records vocabulary membership and provenance only, never learning evidence, and returns only accepted/replayed status after closed-shape, binding, track, and event-integrity validation. Duplicate lexical equivalence remains service-authoritative. Binding, event, idempotency, and proposal identities are minted or injected internally.",
     inputSchema: EVENT_INPUT_SCHEMA,
     annotations: Object.freeze({
       readOnlyHint: false,
@@ -287,7 +333,7 @@ export const CONNECTOR_TOOLS = Object.freeze([
 
 class ConnectorFailure extends Error {
   constructor(state, code) {
-    super("Yip-Yap connector request failed.");
+    super("YipYap connector request failed.");
     this.name = "ConnectorFailure";
     this.state = state;
     this.code = code;
@@ -370,6 +416,17 @@ function requireLevel(value, nullable = false) {
     fail("invalid_response", "schema_invalid");
   }
   return value;
+}
+
+function requireLexiconCount(value) {
+  if (!Number.isSafeInteger(value) || value < 0) {
+    fail("invalid_response", "schema_invalid");
+  }
+  return value;
+}
+
+function compareLexiconText(left, right) {
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 
 function mintIdentity(prefix) {
@@ -569,21 +626,9 @@ function parseProjectionEntry(raw) {
   });
 }
 
-function parseProjection(result) {
-  const wrapper = requireRecord(result);
-  requireExactKeys(wrapper, new Set(["projection"]));
-  const projection = requireRecord(wrapper.projection);
-  if (projection.schema !== "yipyap.lexicon-projection.v1") {
-    if (
-      typeof projection.schema === "string"
-      && /^yipyap\.lexicon-projection\.v\d+$/u.test(projection.schema)
-    ) {
-      fail("invalid_response", "contract_version_unsupported");
-    }
-    fail("invalid_response", "schema_invalid");
-  }
+function parseLegacyProjection(projection) {
   requireExactKeys(projection, new Set(["schema", "authority", "entries", "cursor"]));
-  if (!Array.isArray(projection.entries) || projection.entries.length > 200) {
+  if (!Array.isArray(projection.entries) || projection.entries.length > MAX_LEXICON_RESULT_ROWS) {
     fail("invalid_response", "schema_invalid");
   }
   const entries = projection.entries.map(parseProjectionEntry);
@@ -607,6 +652,264 @@ function parseProjection(result) {
     entries: Object.freeze(entries),
     cursor,
   });
+}
+
+function parseRecentProjectionEntry(raw, windowStartsAtMilliseconds, generatedAtMilliseconds) {
+  const entry = requireRecord(raw);
+  requireExactKeys(
+    entry,
+    new Set([
+      "languageTag",
+      "script",
+      "target",
+      "meaning",
+      "reviewState",
+      "serverRecordedAt",
+    ]),
+  );
+  const track = requireLanguageTrack(entry.languageTag, entry.script);
+  const target = requireText(entry.target, 128);
+  const meaning = requireText(entry.meaning, 512);
+  if (!REVIEW_STATES.has(entry.reviewState)) {
+    fail("invalid_response", "schema_invalid");
+  }
+  const serverRecordedAt = requireTimestamp(entry.serverRecordedAt);
+  const recordedAtMilliseconds = Date.parse(serverRecordedAt);
+  if (
+    recordedAtMilliseconds < windowStartsAtMilliseconds
+    || recordedAtMilliseconds > generatedAtMilliseconds
+  ) {
+    fail("invalid_response", "schema_invalid");
+  }
+  return Object.freeze({
+    ...track,
+    target,
+    meaning,
+    reviewState: entry.reviewState,
+    serverRecordedAt,
+  });
+}
+
+function compareRecentProjectionEntries(left, right) {
+  const timeOrder = Date.parse(right.serverRecordedAt) - Date.parse(left.serverRecordedAt);
+  if (timeOrder !== 0) return timeOrder;
+  for (const key of ["languageTag", "script", "target", "meaning"]) {
+    const order = compareLexiconText(left[key], right[key]);
+    if (order !== 0) return order;
+  }
+  return 0;
+}
+
+function parseRecentProjection(projection) {
+  requireExactKeys(
+    projection,
+    new Set([
+      "schema",
+      "generatedAt",
+      "window",
+      "windowStartsAt",
+      "entries",
+      "matchingCount",
+      "truncated",
+    ]),
+  );
+  if (!Object.hasOwn(RECENT_WINDOW_MILLISECONDS, projection.window)) {
+    fail("invalid_response", "schema_invalid");
+  }
+  const generatedAt = requireTimestamp(projection.generatedAt);
+  const windowStartsAt = requireTimestamp(projection.windowStartsAt);
+  const generatedAtMilliseconds = Date.parse(generatedAt);
+  const windowStartsAtMilliseconds = Date.parse(windowStartsAt);
+  if (
+    generatedAtMilliseconds - windowStartsAtMilliseconds
+    !== RECENT_WINDOW_MILLISECONDS[projection.window]
+  ) {
+    fail("invalid_response", "schema_invalid");
+  }
+  if (!Array.isArray(projection.entries) || projection.entries.length > MAX_LEXICON_RESULT_ROWS) {
+    fail("invalid_response", "schema_invalid");
+  }
+  const entries = projection.entries.map((entry) => parseRecentProjectionEntry(
+    entry,
+    windowStartsAtMilliseconds,
+    generatedAtMilliseconds,
+  ));
+  for (let index = 1; index < entries.length; index += 1) {
+    if (compareRecentProjectionEntries(entries[index - 1], entries[index]) > 0) {
+      fail("invalid_response", "schema_invalid");
+    }
+  }
+  const matchingCount = requireLexiconCount(projection.matchingCount);
+  if (typeof projection.truncated !== "boolean" || matchingCount < entries.length) {
+    fail("invalid_response", "schema_invalid");
+  }
+  if (projection.truncated !== (matchingCount > entries.length)) {
+    fail("invalid_response", "schema_invalid");
+  }
+  return Object.freeze({
+    schema: projection.schema,
+    generatedAt,
+    window: projection.window,
+    windowStartsAt,
+    entries: Object.freeze(entries),
+    matchingCount,
+    truncated: projection.truncated,
+  });
+}
+
+function parseSummaryTrack(raw) {
+  const track = requireRecord(raw);
+  requireExactKeys(
+    track,
+    new Set(["languageTag", "script", "active", "archived", "total"]),
+  );
+  const languageTrack = requireLanguageTrack(track.languageTag, track.script);
+  const active = requireLexiconCount(track.active);
+  const archived = requireLexiconCount(track.archived);
+  const total = requireLexiconCount(track.total);
+  if (
+    !Number.isSafeInteger(active + archived)
+    || active + archived !== total
+    || total === 0
+  ) {
+    fail("invalid_response", "schema_invalid");
+  }
+  return Object.freeze({ ...languageTrack, active, archived, total });
+}
+
+function parseSummaryProjection(projection) {
+  requireExactKeys(
+    projection,
+    new Set([
+      "schema",
+      "generatedAt",
+      "active",
+      "archived",
+      "addedLast24Hours",
+      "addedLast7Days",
+      "byTrack",
+      "trackCount",
+      "tracksTruncated",
+    ]),
+  );
+  const generatedAt = requireTimestamp(projection.generatedAt);
+  const active = requireLexiconCount(projection.active);
+  const archived = requireLexiconCount(projection.archived);
+  const total = active + archived;
+  if (!Number.isSafeInteger(total)) {
+    fail("invalid_response", "schema_invalid");
+  }
+  const addedLast24Hours = requireLexiconCount(projection.addedLast24Hours);
+  const addedLast7Days = requireLexiconCount(projection.addedLast7Days);
+  if (
+    addedLast24Hours > addedLast7Days
+    || addedLast7Days > total
+  ) {
+    fail("invalid_response", "schema_invalid");
+  }
+  if (!Array.isArray(projection.byTrack) || projection.byTrack.length > MAX_LEXICON_RESULT_ROWS) {
+    fail("invalid_response", "schema_invalid");
+  }
+  const byTrack = projection.byTrack.map(parseSummaryTrack);
+  for (let index = 1; index < byTrack.length; index += 1) {
+    const previous = byTrack[index - 1];
+    const current = byTrack[index];
+    const languageOrder = compareLexiconText(previous.languageTag, current.languageTag);
+    if (
+      languageOrder > 0
+      || (
+        languageOrder === 0
+        && compareLexiconText(previous.script, current.script) > 0
+      )
+    ) {
+      fail("invalid_response", "schema_invalid");
+    }
+  }
+  const trackKeys = new Set(byTrack.map((track) => `${track.languageTag}\u0000${track.script}`));
+  if (trackKeys.size !== byTrack.length) fail("invalid_response", "schema_invalid");
+  const trackCount = requireLexiconCount(projection.trackCount);
+  if (typeof projection.tracksTruncated !== "boolean" || trackCount < byTrack.length) {
+    fail("invalid_response", "schema_invalid");
+  }
+  if (projection.tracksTruncated !== (trackCount > byTrack.length)) {
+    fail("invalid_response", "schema_invalid");
+  }
+  const representedActive = byTrack.reduce((sum, track) => sum + track.active, 0);
+  const representedArchived = byTrack.reduce((sum, track) => sum + track.archived, 0);
+  if (
+    !Number.isSafeInteger(representedActive)
+    || !Number.isSafeInteger(representedArchived)
+    || representedActive > active
+    || representedArchived > archived
+  ) {
+    fail("invalid_response", "schema_invalid");
+  }
+  if (
+    !projection.tracksTruncated
+    && (representedActive !== active || representedArchived !== archived)
+  ) {
+    fail("invalid_response", "schema_invalid");
+  }
+  return Object.freeze({
+    schema: projection.schema,
+    generatedAt,
+    active,
+    archived,
+    addedLast24Hours,
+    addedLast7Days,
+    byTrack: Object.freeze(byTrack),
+    trackCount,
+    tracksTruncated: projection.tracksTruncated,
+  });
+}
+
+function parseLexiconRead(result, request) {
+  const wrapper = requireRecord(result);
+  if (!Object.hasOwn(request, "schema")) {
+    requireExactKeys(wrapper, new Set(["projection"]));
+    const projection = requireRecord(wrapper.projection);
+    if (projection.schema === "yipyap.lexicon-projection.v1") {
+      return Object.freeze({ projection: parseLegacyProjection(projection) });
+    }
+    if (
+      typeof projection.schema === "string"
+      && /^yipyap\.lexicon-projection\.v\d+$/u.test(projection.schema)
+    ) {
+      fail("invalid_response", "contract_version_unsupported");
+    }
+    fail("invalid_response", "schema_invalid");
+  }
+  if (request.view === "recent") {
+    requireExactKeys(wrapper, new Set(["recent"]));
+    const recent = requireRecord(wrapper.recent);
+    if (recent.schema === "yipyap.lexicon-recent.v1") {
+      const parsed = parseRecentProjection(recent);
+      if (parsed.window !== request.window) fail("invalid_response", "schema_invalid");
+      return Object.freeze({ recent: parsed });
+    }
+    if (
+      typeof recent.schema === "string"
+      && /^yipyap\.lexicon-recent\.v\d+$/u.test(recent.schema)
+    ) {
+      fail("invalid_response", "contract_version_unsupported");
+    }
+    fail("invalid_response", "schema_invalid");
+  }
+  if (request.view === "summary") {
+    requireExactKeys(wrapper, new Set(["summary"]));
+    const summary = requireRecord(wrapper.summary);
+    if (summary.schema === "yipyap.lexicon-summary.v1") {
+      return Object.freeze({ summary: parseSummaryProjection(summary) });
+    }
+    if (
+      typeof summary.schema === "string"
+      && /^yipyap\.lexicon-summary\.v\d+$/u.test(summary.schema)
+    ) {
+      fail("invalid_response", "contract_version_unsupported");
+    }
+    fail("invalid_response", "schema_invalid");
+  }
+  fail("invalid_response", "schema_invalid");
 }
 
 function parseEventSubmission(raw) {
@@ -812,14 +1115,44 @@ function parseEventReceipt(result, binding, submittedEvent) {
   requireExactKeys(receipt, new Set(["event", "item", "replayed"]));
   if (typeof receipt.replayed !== "boolean") fail("invalid_response", "schema_invalid");
   const event = parseReturnedEvent(receipt.event, binding);
+  const item = parseReturnedItem(receipt.item, binding);
   const eventWithoutServerTime = { ...event };
   delete eventWithoutServerTime.serverRecordedAt;
-  if (JSON.stringify(eventWithoutServerTime) !== JSON.stringify(submittedEvent)) {
+  const exactEvent = JSON.stringify(eventWithoutServerTime) === JSON.stringify(submittedEvent);
+  const proposalResolvedToExistingItem =
+    event.kind === "item_proposed"
+    && submittedEvent.kind === "item_proposed"
+    && item !== null
+    && event.personalItemId === item.personalItemId
+    && event.personalItemId !== submittedEvent.personalItemId
+    && JSON.stringify({
+      ...eventWithoutServerTime,
+      personalItemId: submittedEvent.personalItemId,
+    }) === JSON.stringify(submittedEvent);
+  if (!exactEvent && !proposalResolvedToExistingItem) {
     fail("invalid_response", "receipt_mismatch");
   }
-  const item = parseReturnedItem(receipt.item, binding);
-  if (item !== null && event.personalItemId !== item.personalItemId) {
+  if (item !== null) {
+    if (item.languageTag !== event.languageTag || item.script !== event.script) {
+      fail("invalid_response", "receipt_mismatch");
+    }
+    // A proposal ID is a candidate. The service's published duplicate rule may
+    // resolve the recorded proposal subject to an already-owned same-track
+    // item while preserving every other event field. No other kind may cross
+    // that narrow identity seam.
+    if (event.personalItemId !== item.personalItemId) {
+      fail("invalid_response", "receipt_mismatch");
+    }
+  } else if (event.kind === "item_proposed") {
     fail("invalid_response", "receipt_mismatch");
+  }
+  // Automatic proposal sync needs only an authenticated success signal. The
+  // closed item shape, binding, track, and ID relation are validated above, but
+  // duplicate lexical equivalence remains the service's pinned-normalization
+  // responsibility. Review state, prior meaning, revision, and timestamps are
+  // not exposed to the teaching model.
+  if (event.kind === "item_proposed") {
+    return Object.freeze({ accepted: true, replayed: receipt.replayed });
   }
   const visibleEvent = { ...event };
   delete visibleEvent.eventId;
@@ -921,9 +1254,12 @@ function tokenFrom(getToken) {
 }
 
 function createTransport({ getToken, fetchImpl, timeoutMs }) {
-  return async function callCallable(name, input) {
+  return async function callCallable(name, input, capturedToken) {
     if (!CALLABLE_NAME_SET.has(name)) fail("invalid_request", "unknown_tool");
-    const sessionToken = tokenFrom(getToken);
+    const sessionToken = capturedToken ?? tokenFrom(getToken);
+    if (typeof sessionToken !== "string" || !SESSION_TOKEN.test(sessionToken)) {
+      fail("not_configured", "connector_not_configured");
+    }
     const body = JSON.stringify({ data: { sessionToken, ...input } });
     if (Buffer.byteLength(body, "utf8") > MAX_REQUEST_BYTES) {
       fail("invalid_request", "request_too_large");
@@ -966,6 +1302,26 @@ function createTransport({ getToken, fetchImpl, timeoutMs }) {
     }
     fail("unavailable", "network_unavailable");
   };
+}
+
+function sessionTokenDigest(sessionToken) {
+  return createHash("sha256").update(sessionToken, "utf8").digest("hex");
+}
+
+function sameBinding(left, right) {
+  return left.accountId === right.accountId
+    && left.installationId === right.installationId
+    && left.providerId === right.providerId;
+}
+
+function settingsMatchContext(settings, context) {
+  return settings.activeTrack !== null
+    && settings.instructionLanguageTag !== null
+    && settings.instructionScript !== null
+    && settings.activeTrack.languageTag === context.languageTag
+    && settings.activeTrack.script === context.script
+    && settings.instructionLanguageTag === context.instructionLanguageTag
+    && settings.storedLevel === context.storedLevel;
 }
 
 function parsePairArguments(value) {
@@ -1033,13 +1389,13 @@ function writeConnectorConfig(configPath, sessionToken) {
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   const directoryStat = lstatSync(directory);
   if (directoryStat.isSymbolicLink() || !directoryStat.isDirectory()) {
-    throw new Error("Yip-Yap connector storage is unavailable.");
+    throw new Error("YipYap connector storage is unavailable.");
   }
   chmodSync(directory, 0o700);
 
   const existing = lstatOrAbsent(configPath);
   if (existing && (existing.isSymbolicLink() || !existing.isFile())) {
-    throw new Error("Yip-Yap connector storage is unavailable.");
+    throw new Error("YipYap connector storage is unavailable.");
   }
 
   const temporaryPath = `${configPath}.${process.pid}.${randomBytes(12).toString("hex")}.tmp`;
@@ -1069,7 +1425,7 @@ function writeConnectorConfig(configPath, sessionToken) {
     } catch {
       // The temp file may never have been created or may already be gone.
     }
-    throw new Error("Yip-Yap connector storage is unavailable.");
+    throw new Error("YipYap connector storage is unavailable.");
   }
 }
 
@@ -1190,6 +1546,36 @@ function parseContextArguments(value) {
 
 function parseProjectionArguments(value) {
   const args = requireRecord(value ?? {});
+  if (Object.hasOwn(args, "schema")) {
+    if (args.schema !== LEXICON_READ_REQUEST_SCHEMA) {
+      if (
+        typeof args.schema === "string"
+        && /^yipyap\.lexicon-read-request\.v\d+$/u.test(args.schema)
+      ) {
+        fail("invalid_response", "contract_version_unsupported");
+      }
+      fail("invalid_response", "schema_invalid");
+    }
+    if (args.view === "recent") {
+      requireExactKeys(args, new Set(["schema", "view", "window"]));
+      if (!Object.hasOwn(RECENT_WINDOW_MILLISECONDS, args.window)) {
+        fail("invalid_response", "schema_invalid");
+      }
+      return Object.freeze({
+        schema: LEXICON_READ_REQUEST_SCHEMA,
+        view: "recent",
+        window: args.window,
+      });
+    }
+    if (args.view === "summary") {
+      requireExactKeys(args, new Set(["schema", "view"]));
+      return Object.freeze({
+        schema: LEXICON_READ_REQUEST_SCHEMA,
+        view: "summary",
+      });
+    }
+    fail("invalid_response", "schema_invalid");
+  }
   requireKeys(args, new Set(["cursor"]), new Set());
   if (!Object.hasOwn(args, "cursor")) return Object.freeze({});
   return Object.freeze({ cursor: requireString(args.cursor, PAGE_CURSOR, 256) });
@@ -1213,12 +1599,12 @@ function parseToolArguments(parser, value) {
 }
 
 const FAILURE_MESSAGES = Object.freeze({
-  not_configured: "Yip-Yap is not set up for this host; use effective level L0.",
-  needs_reconnect: "Yip-Yap needs to be reconnected; use effective level L0.",
-  unavailable: "Yip-Yap is temporarily unavailable; use effective level L0.",
-  refused: "Yip-Yap refused the request; use effective level L0.",
-  invalid_response: "Yip-Yap returned an unusable response; use effective level L0.",
-  invalid_request: "The Yip-Yap tool request was invalid; use effective level L0.",
+  not_configured: "YipYap is not set up for this host; use effective level L0.",
+  needs_reconnect: "YipYap needs to be reconnected; use effective level L0.",
+  unavailable: "YipYap is temporarily unavailable; use effective level L0.",
+  refused: "YipYap refused the request; use effective level L0.",
+  invalid_response: "YipYap returned an unusable response; use effective level L0.",
+  invalid_request: "The YipYap tool request was invalid; use effective level L0.",
 });
 
 function toolSuccess(payload) {
@@ -1249,6 +1635,31 @@ function toolFailure(error) {
   });
 }
 
+function proposalSyncFailure(error) {
+  const failure = error instanceof ConnectorFailure
+    ? error
+    : new ConnectorFailure("unavailable", "connector_failure");
+  const state = Object.hasOwn(FAILURE_MESSAGES, failure.state)
+    ? failure.state
+    : "unavailable";
+  // The visible teaching draft was already settled from a coherent read cycle.
+  // Even a credential loss or revocation discovered here is a missed capture,
+  // not permission to retroactively suppress that reply. The next reply starts
+  // another fresh read cycle and will fail closed if authority is still gone.
+  const body = Object.freeze({
+    ok: false,
+    accepted: false,
+    connectorState: state,
+    syncStatus: "not_recorded",
+    teachingEffect: "none",
+    code: failure.code,
+    message: "Vocabulary proposal was not recorded; keep the verified teaching reply unchanged.",
+  });
+  return Object.freeze({
+    content: Object.freeze([{ type: "text", text: JSON.stringify(body) }]),
+  });
+}
+
 /**
  * Create a lazy connector. Construction performs no credential read, no
  * filesystem read, and no network I/O. The default token source is the
@@ -1265,10 +1676,10 @@ export function createYipYapConnector({
   fetchImpl = globalThis.fetch,
   timeoutMs = DEFAULT_TIMEOUT_MS,
 } = {}) {
-  if (!PROVIDER_IDS.has(providerId)) throw new TypeError("Unsupported Yip-Yap provider id.");
+  if (!PROVIDER_IDS.has(providerId)) throw new TypeError("Unsupported YipYap provider id.");
   const resolvedConfigPath = configPath ?? connectorConfigPath(providerId);
   if (typeof resolvedConfigPath !== "string" || resolvedConfigPath.length === 0) {
-    throw new TypeError("Yip-Yap connector config path is invalid.");
+    throw new TypeError("YipYap connector config path is invalid.");
   }
   const resolvedGetToken = getToken ?? (() => {
     const configured = readConnectorConfigToken(resolvedConfigPath);
@@ -1278,17 +1689,24 @@ export function createYipYapConnector({
     return legacyEnvironmentToken === "" ? undefined : legacyEnvironmentToken;
   });
   if (typeof resolvedGetToken !== "function" || typeof fetchImpl !== "function") {
-    throw new TypeError("Yip-Yap connector dependencies are invalid.");
+    throw new TypeError("YipYap connector dependencies are invalid.");
   }
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 60_000) {
-    throw new TypeError("Yip-Yap connector timeout is invalid.");
+    throw new TypeError("YipYap connector timeout is invalid.");
   }
   const callCallable = createTransport({ getToken: resolvedGetToken, fetchImpl, timeoutMs });
   const redeemCode = createRedeemTransport({ fetchImpl, timeoutMs });
+  let readCycle = null;
+  let proposalWindow = null;
 
-  async function readBinding() {
+  function clearTeachingCycle() {
+    readCycle = null;
+    proposalWindow = null;
+  }
+
+  async function readBinding(capturedToken) {
     return parseConnectionStatus(
-      await callCallable("providerReadConnectionStatus", {}),
+      await callCallable("providerReadConnectionStatus", {}, capturedToken),
       providerId,
     );
   }
@@ -1299,6 +1717,7 @@ export function createYipYapConnector({
       try {
         switch (name) {
           case "yipyapPair": {
+            clearTeachingCycle();
             const normalizedCode = parseToolArguments(parsePairArguments, args);
             const sessionToken = await redeemCode(normalizedCode);
             writeConnectorConfig(resolvedConfigPath, sessionToken);
@@ -1306,57 +1725,142 @@ export function createYipYapConnector({
             return toolSuccess(Object.freeze({
               paired: true,
               providerId,
-              message: "Paired to your Yip Yap account. The credential is stored locally and never shown.",
+              message: "Paired to your YipYap account. The credential is stored locally and never shown.",
             }));
           }
           case "providerReadConnectionStatus": {
+            clearTeachingCycle();
             parseToolArguments(parseEmptyArguments, args);
-            const status = await readBinding();
+            const sessionToken = tokenFrom(resolvedGetToken);
+            const status = await readBinding(sessionToken);
+            readCycle = status.visible.converged === true
+              && ["connection.status", "teaching.read", "lexicon.read"]
+                .every((scope) => status.visible.grantedScopes.includes(scope))
+              ? Object.freeze({
+                tokenDigest: sessionTokenDigest(sessionToken),
+                binding: status.binding,
+                settings: null,
+              })
+              : null;
             return toolSuccess({ status: status.visible });
           }
           case "providerReadTeachingSettings": {
             parseToolArguments(parseEmptyArguments, args);
+            const sessionToken = tokenFrom(resolvedGetToken);
+            const tokenDigest = sessionTokenDigest(sessionToken);
+            if (readCycle === null || readCycle.tokenDigest !== tokenDigest) {
+              clearTeachingCycle();
+              fail("needs_reconnect", "read_cycle_invalid");
+            }
             const settings = parseSettings(
-              await callCallable("providerReadTeachingSettings", {}),
+              await callCallable("providerReadTeachingSettings", {}, sessionToken),
             );
+            readCycle = Object.freeze({ ...readCycle, settings });
             return toolSuccess({ settings });
           }
           case "providerReadTeachingContext": {
             const signals = parseToolArguments(parseContextArguments, args);
+            const sessionToken = tokenFrom(resolvedGetToken);
+            const tokenDigest = sessionTokenDigest(sessionToken);
+            if (
+              readCycle === null
+              || readCycle.settings === null
+              || readCycle.tokenDigest !== tokenDigest
+            ) {
+              clearTeachingCycle();
+              fail("needs_reconnect", "read_cycle_invalid");
+            }
             const context = parseContext(
-              await callCallable("providerReadTeachingContext", signals),
+              await callCallable("providerReadTeachingContext", signals, sessionToken),
             );
+            if (context !== null && !settingsMatchContext(readCycle.settings, context)) {
+              clearTeachingCycle();
+              fail("invalid_response", "settings_context_mismatch");
+            }
+            proposalWindow = context === null
+              ? null
+              : Object.freeze({
+                tokenDigest,
+                binding: readCycle.binding,
+                languageTag: context.languageTag,
+                script: context.script,
+                remaining: 2,
+              });
+            readCycle = null;
             return toolSuccess(context === null
               ? { context: null, effectiveLevel: 0 }
               : { context });
           }
           case "providerReadLexiconProjection": {
             const request = parseToolArguments(parseProjectionArguments, args);
-            const projection = parseProjection(
+            clearTeachingCycle();
+            const lexiconRead = parseLexiconRead(
               await callCallable("providerReadLexiconProjection", request),
+              request,
             );
-            return toolSuccess({ projection });
+            return toolSuccess(lexiconRead);
           }
           case "providerSubmitLearnerEvent": {
             const event = parseToolArguments(parseEventArguments, args);
-            const status = await readBinding();
-            const boundEvent = Object.freeze({
-              ...event,
-              accountId: status.binding.accountId,
-              installationId: status.binding.installationId,
-              providerId: status.binding.providerId,
-            });
-            const receipt = parseEventReceipt(
-              await callCallable("providerSubmitLearnerEvent", { event: boundEvent }),
-              status.binding,
-              event,
-            );
-            return toolSuccess(receipt);
+            try {
+              const sessionToken = tokenFrom(resolvedGetToken);
+              const tokenDigest = sessionTokenDigest(sessionToken);
+              const status = await readBinding(sessionToken);
+              if (status.visible.converged !== true) {
+                fail("refused", "identity_conflict");
+              }
+              const requiredScope = REQUIRED_SCOPE_BY_EVENT_KIND[event.kind];
+              if (!status.visible.grantedScopes.includes(requiredScope)) {
+                fail("refused", "scope_denied");
+              }
+              if (event.kind === "item_proposed") {
+                if (
+                  proposalWindow === null
+                  || proposalWindow.remaining < 1
+                  || proposalWindow.tokenDigest !== tokenDigest
+                  || !sameBinding(proposalWindow.binding, status.binding)
+                  || proposalWindow.languageTag !== event.languageTag
+                  || proposalWindow.script !== event.script
+                ) {
+                  fail("refused", "identity_conflict");
+                }
+                proposalWindow = Object.freeze({
+                  ...proposalWindow,
+                  remaining: proposalWindow.remaining - 1,
+                });
+              }
+              const boundEvent = Object.freeze({
+                ...event,
+                accountId: status.binding.accountId,
+                installationId: status.binding.installationId,
+                providerId: status.binding.providerId,
+              });
+              const receipt = parseEventReceipt(
+                await callCallable(
+                  "providerSubmitLearnerEvent",
+                  { event: boundEvent },
+                  sessionToken,
+                ),
+                status.binding,
+                event,
+              );
+              if (event.kind === "item_proposed" && proposalWindow?.remaining === 0) {
+                proposalWindow = null;
+              }
+              return toolSuccess(receipt);
+            } catch (error) {
+              if (event.kind === "item_proposed") {
+                proposalWindow = null;
+                return proposalSyncFailure(error);
+              }
+              throw error;
+            }
           }
           default:
             fail("invalid_request", "unknown_tool");
         }
       } catch (error) {
+        clearTeachingCycle();
         return toolFailure(error);
       }
     },

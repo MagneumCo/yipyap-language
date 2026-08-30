@@ -1,9 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "yipyap-language",
-  "displayName": "Yip-Yap Language",
-  "version": "0.2.1",
-  "description": "Provider-neutral Yip-Yap language learning with supported-host session bootstrap and a bounded account connector.",
+  "displayName": "YipYap (Language)",
+  "version": "0.2.2",
+  "description": "Provider-neutral YipYap learning with supported-host session bootstrap and a bounded account connector.",
   "author": {
     "name": "BDI Labs",
     "url": "https://github.com/bdilabs247"
@@ -13,7 +13,7 @@
   "license": "Proprietary",
   "keywords": [
     "language-learning",
-    "yip-yap"
+    "yipyap"
   ],
   "skills": [
     "./skills/yipyap-language"

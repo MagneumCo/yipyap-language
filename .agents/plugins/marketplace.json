@@ -1,7 +1,7 @@
 {
   "name": "yipyap",
   "interface": {
-    "displayName": "Yip-Yap"
+    "displayName": "YipYap (Language)"
   },
   "plugins": [
     {

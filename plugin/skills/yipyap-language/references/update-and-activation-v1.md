@@ -13,7 +13,7 @@ For an explicit update-status request, the Skill may invoke the separately
 trusted updater's declarative check; the Skill itself does not fetch or parse
 GitHub content.
 
-Update discovery belongs to a separately trusted Yip-Yap-controlled update
+Update discovery belongs to a separately trusted YipYap-controlled update
 surface. It may check the signed stable channel at app launch, on a bounded
 cadence, or when the learner asks; the Skill may request that separately
 trusted check but never performs its network or verification work. The
@@ -43,7 +43,7 @@ unverified candidate package.
 
 Signed self-update begins only after a trusted first install. A public key
 downloaded beside an otherwise untrusted plugin cannot authenticate that
-plugin. Version 1 therefore bootstraps through the Yip-Yap app walkthrough,
+plugin. Version 1 therefore bootstraps through the YipYap app walkthrough,
 which pins the release key independently and verifies one immutable tagged
 bundle. Do not install from mutable `main`. Treat a provider marketplace as a
 first-install authority only after its publisher identity and immutable package
@@ -85,14 +85,19 @@ intentional fail-closed behavior, not an instruction to relax validation.
 
 Version 0.2.1 is therefore fresh-install or controlled-reinstall only for an
 existing v0.2.0 installation. Use the provider-native marketplace path or the
-Yip Yap app's independently verified immutable-release installer. Never replace
+YipYap app's independently verified immutable-release installer. Never replace
 the old packet pin, updater, profile, or installed files in place. The external
 connector credential file remains outside the release package; after reinstall,
 pair with a new one-time code and prove a fresh connection before teaching.
 
+Version 0.2.2 retains the v0.2.1 interface packet, so v0.2.1 may accept it as a
+normal higher-sequence signed update. The patch structurally narrows provider
+learner-event discovery to the five Rule 43 kinds and grants no new authority.
+
 ## Check status
 
-For an explicit `Yip-Yap update status` request, invoke the separately trusted
+For an explicit `YipYap update status` request (or its legacy `Yip-Yap update
+status` alias), invoke the separately trusted
 updater's signed-channel check when that capability is available. With either a
 fresh result or fresh state already supplied by the updater:
 

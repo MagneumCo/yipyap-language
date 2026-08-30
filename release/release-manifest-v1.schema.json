@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/bdilabs247/yipyap-language/blob/main/release/release-manifest-v1.schema.json",
-  "title": "Yip-Yap public release manifest v1",
+  "title": "YipYap public release manifest v1",
   "$comment": "Interchange schema only. The shipped verifier is normative for canonical JSON, bytewise path ordering, case-fold collisions, ancestor-file conflicts, content-root recomputation, exact identity parity, and total byte bounds.",
   "type": "object",
   "additionalProperties": false,

@@ -1,6 +1,6 @@
 interface:
-  display_name: "Yip-Yap Language"
-  short_description: "Yip-Yap language learning"
-  default_prompt: "Use $yipyap-language to report my current Yip-Yap setup status."
+  display_name: "YipYap (Language)"
+  short_description: "Language learning with YipYap"
+  default_prompt: "Use $yipyap-language to report my current YipYap (Language) setup status."
 policy:
   allow_implicit_invocation: true

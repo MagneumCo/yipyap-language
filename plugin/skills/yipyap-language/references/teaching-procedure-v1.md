@@ -1,17 +1,19 @@
 # Teaching procedure v1
 
-This is a readable projection of the versioned Yip-Yap teaching-behavior
+This is a readable projection of the versioned YipYap teaching-behavior
 contract, schemaVersion 1. That contract is authoritative; this Skill consumes
 it. The copied conformance corpus, not this prose, is the executable authority
 for settled operations. If owner prose and a vector disagree, the plugin must
 not choose a local meaning; keep the affected behavior unavailable until
-Yip-Yap publishes a versioned clarification.
+YipYap publishes a versioned clarification.
 
-The procedure shapes a reply after correct content has been drafted. It does
-not determine vocabulary eligibility, author or alter curriculum meaning,
-render audio, grade, persist settings, or admit learner evidence. It may choose
-among eligible supplied items for local task fit and may provide an ephemeral
-translation/correction when the learner directly asks or writes target text.
+The procedure shapes a reply after correct content has been drafted. The AI is
+the conversational teaching surface: it prefers eligible vocabulary supplied
+by YipYap and may generate the best context-relevant target-language items
+needed to fill the verified dose within the introduction cap. It does not alter
+curated curriculum meaning, render audio, grade, persist settings, or admit
+learner evidence. It may also provide an ephemeral translation or correction
+when the learner directly asks or writes target-language text.
 
 ## Eight corpus operations
 
@@ -97,15 +99,100 @@ instruction-language verdict with an unglossed new item. At levels where the
 contract preserves an instruction-language verdict tag or summary line, keep
 those survivors intact.
 
-## Selection inside a reply
+## Selection and generation inside a reply
 
-The account service supplies the eligible items and their exact glosses. Within
-that bounded set, reuse due items and items already used in the session before
-introducing something new. The provider may choose or order an eligible item
+The account service supplies the active target-language track, instruction
+language, stored level, introduction cap, and bounded preferred vocabulary.
+Use only those verified language and script values; never infer a language from
+locale or assume that every account uses Spanish. An absent or unsupported
+active track or instruction language forces effective L0.
+
+For v0.2.2, the connector's support predicate is the published packet's closed
+BCP 47 language-tag grammar plus an explicit ISO 15924 script whose embedded
+script subtag, when present, agrees. This applies equally to target and
+instruction languages; there is no Spanish or English allowlist. The six
+tracks covered by the pinned lexical-normalization vectors (`es-MX`, `fr-FR`,
+`de-DE`, `it-IT`, `nb-NO`, and `zh-Hans-CN`) are conformance coverage, not the
+product boundary. A host that cannot reliably render a contract-valid selected
+language/script still fails that reply closed instead of guessing, translating
+through locale, or silently substituting another language.
+
+Prefer supplied due, familiar, learning, known, or otherwise reusable entries
+before generating a new item. The provider may choose or order a supplied item
 to fit the current work and may leave candidates unused to honor the dose and
-cap. It must not add a candidate, translate, canonicalize, or alter the
-supplied meaning, and it must never send conversation or repository context
-back to the connector to make that choice.
+cap. Preserve every supplied `target`, `meaning`, `standing`, and `isNew`
+exactly; do not translate, canonicalize, expand, or repair it.
+
+After applying that preference, the AI may generate useful target-language
+words or phrases that fit the conversation. Give each generated item a concise
+meaning in the verified instruction language. Count every supplied `isNew`
+item and every generated item against the same `newIntroductionCap`; never
+exceed the exact level dose or cap. A valid non-null context with zero supplied
+entries may still use generated items within those two bounds. Never send the
+conversation, draft, repository context, or the reason for an item to the
+connector.
+
+## Best-effort My Lexicon proposal sync
+
+Start every teaching-ready reply with an empty reply-local set. Keep at most 12 pending tuples
+while settling and syncing that reply. Each tuple
+contains exactly `{languageTag, script, target, meaning}`: the verified target
+track, the target-language item actually rendered, and its instruction-language
+meaning. It contains no transcript, excerpt, reason, prompt, source text,
+message/task/session identity, timestamp, score, status, evidence field, or
+unrelated conversation. Do not put supplied context entries in this set;
+they already came from YipYap.
+
+Deduplicate pending tuples by byte-exact equality across all four fields. This
+is transport housekeeping, not lexical normalization. Never case-fold, strip,
+translate, repair, or compute a normalized key; the YipYap service owns
+cross-provider canonicalization and duplicate collapse. Add only generated
+items that remain in the final visible reply. When adding above 12 would
+overflow the set, drop the oldest tuple and keep teaching. Never carry a tuple
+from an earlier reply, `resume`, `compact`, pairing, reconnect, or settings
+state. This reply-local lifetime intentionally sacrifices uncaptured items
+instead of risking an item or meaning crossing accounts or language tracks.
+
+After a teaching-ready draft is final and a fresh connection status grants
+`lexicon.propose`, attempt at most the two oldest pending tuples. For each one,
+call the existing `providerSubmitLearnerEvent` operation. On the remote MCP
+profile, include the exact handle echoed by the current reply's non-null
+context:
+
+```json
+{
+  "workflowHandle": "<exact current-reply workflow handle>",
+  "event": {
+    "kind": "item_proposed",
+    "languageTag": "<verified target language tag>",
+    "script": "<verified target script>",
+    "payload": { "target": "<rendered item>", "meaning": "<instruction-language meaning>" }
+  }
+}
+```
+
+For the local connector profile, omit `workflowHandle`; its closed schema and
+process-memory guard remain unchanged. Never display or persist a remote
+handle, and never reuse it in a later reply.
+
+Treat a proposal receipt only as success or failure; never use returned item or
+event details as teaching context or learner state. On the first refusal,
+timeout, or malformed receipt, stop that reply's flush. If `lexicon.propose` is
+absent, skip the flush. After the attempt or skip, discard every tuple,
+including successful, failed, unattempted, and overflowed entries. Never retry
+one in a later reply. Sync may be delayed, incomplete, or missed; that is
+acceptable. A proposal-sync failure never changes, suppresses, or retroactively
+invalidates an otherwise verified teaching reply.
+
+Here, non-gating describes the reply's semantic outcome, not zero transport
+latency. Obey the connector's bounded request timeout and stop on the first
+failed proposal attempt.
+
+The set is never a file, database, environment value, connector cache, durable
+queue, cross-reply memory, teaching source, or promise of replay. Never rebuild
+it from conversation history. Each proposal records vocabulary membership and
+provider provenance only. It never records or implies exposure, correctness,
+recall, mastery, confirmation, known status, or an `item_rendered` event.
 
 ## Effective level
 
@@ -137,7 +224,7 @@ automatically; the learner's explicit command is the only level-changing act.
 
 Non-empty learner text that is not a command may be classified as production,
 but classification alone is not evidence. Admission requires an authenticated
-response on a Yip-Yap-controlled surface. A Claude or ChatGPT/Codex conversation
+response on a YipYap-controlled surface. A Claude or ChatGPT/Codex conversation
 does not satisfy that gate.
 
 When the learner writes any target-language text in provider conversation—even
@@ -148,15 +235,42 @@ and identify actual errors or say plainly that none are present. Separate
 correctness from optional register improvements, do not attribute likely
 transcription noise to the learner, and do not invent a meaning to make a
 correction work. This recast is ephemeral presentation only: do not transmit,
-log, score, or admit the learner's conversation text as Yip-Yap evidence.
+log, score, or admit the learner's conversation text as YipYap evidence.
+
+## Per-reply transparency footer
+
+For every teaching-ready reply, append one plain-text final line no longer than
+120 characters:
+
+```text
+⟦YIP <languageTag> L<storedLevel> │ new <n>: <targets or —> │ review <n>: <targets or —>⟧
+```
+
+Use the verified language tag and stored level. `new` counts only supplied
+entries rendered with `isNew: true` plus generated items actually rendered in
+this reply. `review` counts only rendered supplied entries with `isNew: false`.
+Any target names repeated in the footer must already appear as teaching items
+in the reply body. Footer-only tokens never count toward the dose, introduction
+cap, `new` or `review` totals, pending state, or proposal sync.
+The labels describe this reply's presentation; they are not learner truth or a
+claim that an item is new, due, familiar, or known in the master lexicon. If the
+line would exceed 120 characters, drop both target lists before dropping the
+language tag, level, or counts. Never add known totals, scores, streaks, due
+totals, mastery, promotion progress, or values reconstructed from chat.
+
+Do not render this footer for disconnected, unavailable, malformed, null,
+unsupported, or otherwise non-teaching-ready context. A subagent or delegated
+worker never renders it. The footer itself is presentation only and is never
+queued or synced.
 
 ## Audio and absent machinery
 
 The declared policy is `new-items-only` and never autoplay. The connector may
 return eligible text and glosses but provides no approved renderer or audio
-source, so this release produces no Yip-Yap audio.
+source, so this release produces no YipYap audio.
 
-A connected status banner or footer may show only fields from a reviewed,
-bounded app projection. Never reconstruct counts, due items, scores, streaks,
-or promotion progress from provider chat. The exact customer-facing footer
-shape is not published in v1, so this release omits it.
+A connected status banner may show only fields from a reviewed, bounded app
+projection. The reply footer above is the narrow exception: it uses one
+verified stored level plus the items the AI can directly observe in its own
+current reply. Never reconstruct account counts, due totals, scores, streaks,
+mastery, or promotion progress from provider chat.

@@ -3,12 +3,12 @@
   "owner": {
     "name": "BDI Labs"
   },
-  "description": "Official Yip-Yap language-learning plugins from BDI Labs.",
+  "description": "Official YipYap (Language) plugins from BDI Labs.",
   "plugins": [
     {
       "name": "yipyap-language",
       "source": "./plugin",
-      "description": "Provider-neutral Yip-Yap language learning with safe fresh-session bootstrap."
+      "description": "Provider-neutral YipYap learning with safe fresh-session bootstrap."
     }
   ]
 }

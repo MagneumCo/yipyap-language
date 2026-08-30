@@ -9,7 +9,7 @@ for this repository. Private vulnerability reporting must be enabled before
 publication. Include the affected release version, provider, reproducible
 impact, and the minimum evidence needed to investigate. Never include a live
 session token. If the private-report form is unavailable, do not fall back to a
-public issue; use the private security contact shown in the official Yip-Yap
+public issue; use the private security contact shown in the official YipYap
 product surface.
 
 Official releases are versioned, signed, and intended to be installed from the
