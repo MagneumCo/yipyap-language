@@ -107,7 +107,7 @@ Use only those verified language and script values; never infer a language from
 locale or assume that every account uses Spanish. An absent or unsupported
 active track or instruction language forces effective L0.
 
-For v0.2.2, the connector's support predicate is the published packet's closed
+The connector's support predicate is the published packet's closed
 BCP 47 language-tag grammar plus an explicit ISO 15924 script whose embedded
 script subtag, when present, agrees. This applies equally to target and
 instruction languages; there is no Spanish or English allowlist. The six

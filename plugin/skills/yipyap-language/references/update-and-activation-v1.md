@@ -94,6 +94,50 @@ Version 0.2.2 retains the v0.2.1 interface packet, so v0.2.1 may accept it as a
 normal higher-sequence signed update. The patch structurally narrows provider
 learner-event discovery to the five Rule 43 kinds and grants no new authority.
 
+### v0.3 API-origin boundary and promotion
+
+The v0.3 line changes the exact signed runtime transport contract. Its
+compile-time `future-production` profile reaches only
+`https://api.magneum.co`, uses a separate profile-bound local credential file,
+and has no legacy environment-token fallback. Immutable v0.2.1 and v0.2.2
+updaters must reject that candidate as incompatible. This is intentional
+fail-closed behavior, not permission to relax the exact contract check.
+
+That updater refusal blocks an ordinary in-place update. It does not exclude
+existing production installations from an owner-approved promotion. One
+explicit, consequence-aware promotion authorization may both make
+`future-production` the default and cover every non-deleted production
+installation. Do not silently infer that authorization from signing,
+publication, installation, service deployment, or a channel notification, but
+do not demand another approval for each installation merely because it already
+exists.
+
+The app and service own the migration; the Skill, connector, and updater do
+not gain a migration operation. A missing or legacy production binding must
+migrate. An exact future binding is an idempotent no-op that still counts. A
+revoked or disconnected installation keeps that state, receives no replacement
+credential, and moves its next connection path to future production. An
+unknown, malformed, cross-account, or contradictory row blocks rather than
+being skipped. Isolated development is not a production installation.
+
+Preserve the exact account, installation, provider, transport, lifecycle
+state, exact granted scopes, and customer/learning data. For every
+still-authorized connection, stage a separately bound future-production
+credential in the exact provider-specific mode-`0600` path. Never copy, mutate,
+retag, or inherit the legacy bearer bytes under the future issuer, resource,
+audience, profile, transport, gateway, or origin. Provider OAuth or host
+confirmation may still be required by its security protocol; that is not a
+second YipYap owner-approval gate.
+
+Preparation and commit must be transactional, idempotent, and resumable. Exact
+replay may resume, but a reused migration identity with different inputs must
+fail closed. An abort or failure before commit leaves the legacy binding,
+artifact, and credential untouched. Once an installation commits to
+`future-production`, its API-profile high-water is forward-only: repair or roll
+forward at the target profile and report exact partial cohort state. Never
+downgrade that installation to legacy routing or introduce a redirect,
+fallback, mirror, dual read, or dual write.
+
 ## Check status
 
 For an explicit `YipYap update status` request (or its legacy `Yip-Yap update
@@ -164,9 +208,12 @@ log, or pass the token on a command line during an update.
 
 The future apply path must never authenticate an account, change Learning Mode,
 create learner evidence, change a teaching level, disable another language
-runtime, or start a mixer. Cross-provider application is not globally atomic:
-if a later provider fails, the updater compensates every provider already
-changed or reports the exact partial state.
+runtime, or start a mixer. Cross-provider application is not globally atomic.
+A provider that fails before commit remains unchanged. A provider whose
+API-profile commit already succeeded must be repaired or rolled forward at
+that profile, and the updater must report the exact partial state;
+compensation must never retag credentials or lower a committed API-profile
+high-water.
 
 ## Activate and roll back
 
@@ -174,11 +221,14 @@ Successful apply means `restart-required`, not active. The learner must fully
 restart the provider and begin a new root task. Only that task's trusted
 lifecycle marker can load the new release.
 
-Rollback is not implemented in the current updater. Its required behavior is to
-reactivate the previously verified local release without lowering the update
-high-water mark. A remote lower-sequence release is never a rollback mechanism.
-Publishing older bytes as a security fix requires a new, higher release
-sequence.
+Rollback is not implemented in the current updater. Before an API-profile
+commit, its required behavior is to reactivate the previously verified local
+release without lowering the update high-water mark. After a
+`future-production` commit, recovery must use a target-compatible artifact and
+repair or roll forward at that profile; rollback must never reactivate legacy
+routing or lower the API-profile high-water. A remote lower-sequence release is
+never a rollback mechanism. Publishing older bytes as a security fix requires
+a new, higher release sequence.
 
 If current and last-good artifacts both fail verification, report the plugin
 unavailable and remain at effective L0. Never run a partial or unverified hook.

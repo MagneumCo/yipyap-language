@@ -30,7 +30,88 @@ import { dirname, join } from "node:path";
 export const FIREBASE_CALLABLE_BASE =
   "https://us-central1-yipyap-language.cloudfunctions.net";
 export const SESSION_TOKEN_ENV = "YIPYAP_SESSION_TOKEN";
-export const CONNECTOR_VERSION = "0.2.2";
+export const CONNECTOR_VERSION = "0.3.3";
+
+export const API_ORIGIN_PROFILE_SCHEMA = "yipyap.api-origin-profile.v1";
+export const LOCAL_CONNECTOR_CREDENTIAL_SCHEMA =
+  "yipyap.local-connector-credential.v1";
+export const LOCAL_GATEWAY_REQUEST_SCHEMA = "yipyap.local-gateway-request.v1";
+export const LOCAL_GATEWAY_RESPONSE_SCHEMA = "yipyap.local-gateway-response.v1";
+// This is the only production profile-selection seam. A reviewed build may
+// change this source byte before packaging; runtime construction accepts no
+// profile, origin, URL, environment, CLI, response, or model-selected input.
+export const COMPILED_API_ORIGIN_PROFILE_ID = "future-production";
+
+export const CONNECTOR_LOCAL_GATEWAY_ROUTES = Object.freeze({
+  yipyapPair: "/v1/pairing/redeem",
+  providerReadConnectionStatus: "/v1/provider/connection-status",
+  providerReadTeachingSettings: "/v1/provider/teaching-settings",
+  providerReadTeachingContext: "/v1/provider/teaching-context",
+  providerReadLexiconProjection: "/v1/provider/lexicon-projection",
+  providerSubmitLearnerEvent: "/v1/provider/learner-event",
+});
+
+/**
+ * Exact compile-time API-origin rows consumed from the app-owned v1 packet.
+ * The v0.3 source selects future production. Promotion of every non-deleted
+ * production installation is an app/service-owned, explicitly authorized
+ * operation that stages separately bound credentials for still-authorized
+ * connections and commits one exact profile; this connector never retags
+ * legacy bearer bytes or supplies migration fallback. Reviewed
+ * development and legacy compatibility builds may select another named row,
+ * but no URL, redirect, DNS result, response, environment value, or model
+ * output can create or modify a profile.
+ */
+export const CONNECTOR_API_ORIGIN_PROFILES = Object.freeze({
+  "legacy-production": Object.freeze({
+    schema: API_ORIGIN_PROFILE_SCHEMA,
+    profileId: "legacy-production",
+    environmentId: "legacy-production",
+    dataPlaneId: "production-authoritative.v1",
+    origin: "https://bdilabs.dev",
+    issuer: "https://bdilabs.dev",
+    resource: "https://bdilabs.dev/mcp",
+    audience: "https://bdilabs.dev/mcp",
+    mcpMethod: "POST",
+    mcpPath: "/mcp",
+    mcpUrl: "https://bdilabs.dev/mcp",
+    transportFamily: "local-gateway",
+    gatewayProfileId: "legacy-firebase-callables.v1",
+    gatewayOrigin: null,
+  }),
+  "isolated-development": Object.freeze({
+    schema: API_ORIGIN_PROFILE_SCHEMA,
+    profileId: "isolated-development",
+    environmentId: "isolated-development",
+    dataPlaneId: "development-synthetic-isolated.v1",
+    origin: "https://api.bdilabs.dev",
+    issuer: "https://api.bdilabs.dev",
+    resource: "https://api.bdilabs.dev",
+    audience: "https://api.bdilabs.dev",
+    mcpMethod: "POST",
+    mcpPath: "/",
+    mcpUrl: "https://api.bdilabs.dev",
+    transportFamily: "local-gateway",
+    gatewayProfileId: "api-bdilabs-dev-local-gateway.v1",
+    gatewayOrigin: "https://api.bdilabs.dev",
+  }),
+  "future-production": Object.freeze({
+    schema: API_ORIGIN_PROFILE_SCHEMA,
+    profileId: "future-production",
+    environmentId: "future-production",
+    dataPlaneId: "production-authoritative.v1",
+    origin: "https://api.magneum.co",
+    issuer: "https://api.magneum.co",
+    resource: "https://api.magneum.co",
+    audience: "https://api.magneum.co",
+    mcpMethod: "POST",
+    mcpPath: "/",
+    mcpUrl: "https://api.magneum.co",
+    transportFamily: "local-gateway",
+    gatewayProfileId: "api-magneum-co-local-gateway.v1",
+    gatewayOrigin: "https://api.magneum.co",
+  }),
+});
 
 /**
  * Pairing: the app's Connect flow shows a short single-use code; this
@@ -43,8 +124,47 @@ export const CONNECTOR_VERSION = "0.2.2";
 export const REDEEM_CALLABLE = "redeemPairingCode";
 const PAIRING_CODE = /^[0-9A-HJKMNP-TV-Z]{8}$/u;
 
-export function connectorConfigPath(providerId) {
-  return join(homedir(), ".yipyap", `connector-${providerId}.json`);
+function apiOriginProfile(profileId) {
+  if (
+    typeof profileId !== "string"
+    || !Object.hasOwn(CONNECTOR_API_ORIGIN_PROFILES, profileId)
+  ) {
+    throw new TypeError("Unsupported YipYap API-origin profile id.");
+  }
+  return CONNECTOR_API_ORIGIN_PROFILES[profileId];
+}
+
+function transportBinding(profile, providerId) {
+  return Object.freeze({
+    providerId,
+    profileId: profile.profileId,
+    transportFamily: profile.transportFamily,
+    gatewayProfileId: profile.gatewayProfileId,
+    gatewayOrigin: profile.gatewayOrigin,
+  });
+}
+
+function transportBindingKey(binding) {
+  return JSON.stringify(binding);
+}
+
+function transportBindingsEqual(left, right) {
+  return left.providerId === right.providerId
+    && left.profileId === right.profileId
+    && left.transportFamily === right.transportFamily
+    && left.gatewayProfileId === right.gatewayProfileId
+    && left.gatewayOrigin === right.gatewayOrigin;
+}
+
+export function connectorConfigPath(
+  providerId,
+  profileId = COMPILED_API_ORIGIN_PROFILE_ID,
+) {
+  const profile = apiOriginProfile(profileId);
+  const profileSuffix = profile.profileId === "legacy-production"
+    ? ""
+    : `-${profile.profileId}`;
+  return join(homedir(), ".yipyap", `connector-${providerId}${profileSuffix}.json`);
 }
 
 export function normalizePairingCode(raw) {
@@ -155,6 +275,7 @@ const RECENT_WINDOW_MILLISECONDS = Object.freeze({
 });
 const CONFIG_ABSENT = Symbol("yipyap-config-absent");
 const CONFIG_INVALID = Symbol("yipyap-config-invalid");
+const CONFIG_BINDING_MISMATCH = Symbol("yipyap-config-binding-mismatch");
 
 const EMPTY_INPUT_SCHEMA = Object.freeze({
   type: "object",
@@ -171,35 +292,36 @@ const CONTEXT_INPUT_SCHEMA = Object.freeze({
   additionalProperties: false,
 });
 
+// Flat object schema: Claude Code's MCP client (observed on 2.1.236) requires
+// inputSchema.type === "object" and rejects a top-level oneOf — and one
+// rejected tool drops the host's entire tool set. The exactly-one-form law is
+// stated in the tool description and enforced by parseProjectionArguments,
+// which keeps the accepted and refused wire set byte-identical.
 const PROJECTION_INPUT_SCHEMA = Object.freeze({
-  oneOf: Object.freeze([
-    Object.freeze({
-      type: "object",
-      properties: Object.freeze({
-        cursor: Object.freeze({ type: "string", pattern: "^cur_[A-Za-z0-9_-]{16,252}$" }),
-      }),
-      additionalProperties: false,
+  type: "object",
+  properties: Object.freeze({
+    cursor: Object.freeze({
+      type: "string",
+      pattern: "^cur_[A-Za-z0-9_-]{16,252}$",
+      description: "Legacy page form only; never combined with schema, view, or window.",
     }),
-    Object.freeze({
-      type: "object",
-      properties: Object.freeze({
-        schema: Object.freeze({ const: LEXICON_READ_REQUEST_SCHEMA }),
-        view: Object.freeze({ const: "recent" }),
-        window: Object.freeze({ enum: Object.freeze(["day", "week"]) }),
-      }),
-      required: Object.freeze(["schema", "view", "window"]),
-      additionalProperties: false,
+    schema: Object.freeze({
+      type: "string",
+      const: LEXICON_READ_REQUEST_SCHEMA,
+      description: "Required by the recent and summary forms; never combined with cursor.",
     }),
-    Object.freeze({
-      type: "object",
-      properties: Object.freeze({
-        schema: Object.freeze({ const: LEXICON_READ_REQUEST_SCHEMA }),
-        view: Object.freeze({ const: "summary" }),
-      }),
-      required: Object.freeze(["schema", "view"]),
-      additionalProperties: false,
+    view: Object.freeze({
+      type: "string",
+      enum: Object.freeze(["recent", "summary"]),
+      description: "Selects the recent-capture or summary form.",
     }),
-  ]),
+    window: Object.freeze({
+      type: "string",
+      enum: Object.freeze(["day", "week"]),
+      description: "Required by the recent form only; forbidden by every other form.",
+    }),
+  }),
+  additionalProperties: false,
 });
 
 const EVENT_INPUT_SCHEMA = Object.freeze({
@@ -307,7 +429,7 @@ export const CONNECTOR_TOOLS = Object.freeze([
     name: "providerReadLexiconProjection",
     title: "Read lexicon page",
     description:
-      "Read one legacy bounded lexicon page or one exact recent-capture or summary view. This read never reports teaching standing or learner evidence.",
+      "Read one legacy bounded lexicon page or one exact recent-capture or summary view. This read never reports teaching standing or learner evidence. Input constraint: provide parameters for exactly one of (cursor), (schema, view, window) with view \"recent\", or (schema, view) with view \"summary\". Any other combination is refused.",
     inputSchema: PROJECTION_INPUT_SCHEMA,
     annotations: Object.freeze({
       readOnlyHint: true,
@@ -1241,6 +1363,43 @@ function parseFirebaseEnvelope(text) {
   fail("refused", code);
 }
 
+function parseLocalGatewayEnvelope(text, { allowToken = false } = {}) {
+  let decoded;
+  try {
+    decoded = JSON.parse(text);
+  } catch {
+    fail("invalid_response", "invalid_json");
+  }
+  const envelope = requireRecord(decoded);
+  if (
+    typeof envelope.schema === "string"
+    && envelope.schema !== LOCAL_GATEWAY_RESPONSE_SCHEMA
+  ) {
+    fail("invalid_response", "contract_version_unsupported");
+  }
+  if (envelope.schema !== LOCAL_GATEWAY_RESPONSE_SCHEMA) {
+    fail("invalid_response", "schema_invalid");
+  }
+  if (envelope.ok === true) {
+    requireExactKeys(envelope, new Set(["schema", "ok", "result"]));
+    if (!allowToken) ensureNoToken(envelope.result);
+    return envelope.result;
+  }
+  if (envelope.ok === false) {
+    requireExactKeys(envelope, new Set(["schema", "ok", "error"]));
+    const error = requireRecord(envelope.error);
+    requireExactKeys(error, new Set(["code"]));
+    const code = typeof error.code === "string" && ERROR_CODES.has(error.code)
+      ? error.code
+      : "service_refused";
+    if (code === "unauthenticated" || code === "installation_unknown") {
+      fail("needs_reconnect", code);
+    }
+    fail("refused", code);
+  }
+  fail("invalid_response", "schema_invalid");
+}
+
 function retryableHttpStatus(status) {
   return status === 408 || status === 429 || status >= 500;
 }
@@ -1253,18 +1412,29 @@ function tokenFrom(getToken) {
   return token;
 }
 
-function createTransport({ getToken, fetchImpl, timeoutMs }) {
+function createTransport({ profile, getToken, fetchImpl, timeoutMs }) {
   return async function callCallable(name, input, capturedToken) {
     if (!CALLABLE_NAME_SET.has(name)) fail("invalid_request", "unknown_tool");
     const sessionToken = capturedToken ?? tokenFrom(getToken);
     if (typeof sessionToken !== "string" || !SESSION_TOKEN.test(sessionToken)) {
       fail("not_configured", "connector_not_configured");
     }
-    const body = JSON.stringify({ data: { sessionToken, ...input } });
+    const legacy = profile.profileId === "legacy-production";
+    const body = JSON.stringify(legacy
+      ? { data: { sessionToken, ...input } }
+      : { schema: LOCAL_GATEWAY_REQUEST_SCHEMA, payload: input });
     if (Buffer.byteLength(body, "utf8") > MAX_REQUEST_BYTES) {
       fail("invalid_request", "request_too_large");
     }
-    const url = `${FIREBASE_CALLABLE_BASE}/${name}`;
+    const url = legacy
+      ? `${FIREBASE_CALLABLE_BASE}/${name}`
+      : `${profile.gatewayOrigin}${CONNECTOR_LOCAL_GATEWAY_ROUTES[name]}`;
+    const headers = legacy
+      ? Object.freeze({ "content-type": "application/json" })
+      : Object.freeze({
+        Authorization: `Bearer ${sessionToken}`,
+        "content-type": "application/json",
+      });
     for (let attempt = 0; attempt < 2; attempt += 1) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -1272,7 +1442,7 @@ function createTransport({ getToken, fetchImpl, timeoutMs }) {
       try {
         const response = await fetchImpl(url, {
           method: "POST",
-          headers: Object.freeze({ "content-type": "application/json" }),
+          headers,
           body,
           redirect: "error",
           signal: controller.signal,
@@ -1283,7 +1453,8 @@ function createTransport({ getToken, fetchImpl, timeoutMs }) {
         const responseText = await readResponseBody(response);
         if (!response.ok) {
           try {
-            parseFirebaseEnvelope(responseText);
+            if (legacy) parseFirebaseEnvelope(responseText);
+            else parseLocalGatewayEnvelope(responseText);
           } catch (error) {
             if (error instanceof ConnectorFailure && error.state !== "invalid_response") throw error;
           }
@@ -1291,7 +1462,9 @@ function createTransport({ getToken, fetchImpl, timeoutMs }) {
           if (response.status === 401) fail("needs_reconnect", "unauthenticated");
           fail("unavailable", "service_unavailable");
         }
-        return parseFirebaseEnvelope(responseText).result;
+        return legacy
+          ? parseFirebaseEnvelope(responseText).result
+          : parseLocalGatewayEnvelope(responseText);
       } catch (error) {
         if (error instanceof ConnectorFailure) throw error;
         if (attempt === 0) continue;
@@ -1356,13 +1529,7 @@ function parseRedeemEnvelope(text) {
   if (hasResult === hasError) fail("invalid_response", "schema_invalid");
   if (hasResult) {
     requireExactKeys(envelope, new Set(["result"]));
-    const result = requireRecord(envelope.result);
-    requireExactKeys(result, new Set(["sessionToken"]));
-    const sessionToken = result.sessionToken;
-    if (typeof sessionToken !== "string" || !SESSION_TOKEN.test(sessionToken)) {
-      fail("invalid_response", "schema_invalid");
-    }
-    return sessionToken;
+    return parseRedeemResult(envelope.result);
   }
   requireExactKeys(envelope, new Set(["error"]));
   const error = requireRecord(envelope.error);
@@ -1375,6 +1542,16 @@ function parseRedeemEnvelope(text) {
   fail("refused", ERROR_CODES.has(rawCode) ? rawCode : "service_refused");
 }
 
+function parseRedeemResult(raw) {
+  const result = requireRecord(raw);
+  requireExactKeys(result, new Set(["sessionToken"]));
+  const sessionToken = result.sessionToken;
+  if (typeof sessionToken !== "string" || !SESSION_TOKEN.test(sessionToken)) {
+    fail("invalid_response", "schema_invalid");
+  }
+  return sessionToken;
+}
+
 function lstatOrAbsent(targetPath) {
   try {
     return lstatSync(targetPath);
@@ -1384,7 +1561,15 @@ function lstatOrAbsent(targetPath) {
   }
 }
 
-function writeConnectorConfig(configPath, sessionToken) {
+function connectorCredentialDocument(sessionToken, providerId, profile) {
+  return Object.freeze({
+    schema: LOCAL_CONNECTOR_CREDENTIAL_SCHEMA,
+    sessionToken,
+    binding: transportBinding(profile, providerId),
+  });
+}
+
+function writeConnectorConfig(configPath, sessionToken, providerId, profile) {
   const directory = dirname(configPath);
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   const directoryStat = lstatSync(directory);
@@ -1407,7 +1592,11 @@ function writeConnectorConfig(configPath, sessionToken) {
   try {
     descriptor = openSync(temporaryPath, flags, 0o600);
     fchmodSync(descriptor, 0o600);
-    writeFileSync(descriptor, `${JSON.stringify({ sessionToken })}\n`, "utf8");
+    writeFileSync(
+      descriptor,
+      `${JSON.stringify(connectorCredentialDocument(sessionToken, providerId, profile))}\n`,
+      "utf8",
+    );
     fsyncSync(descriptor);
     closeSync(descriptor);
     descriptor = undefined;
@@ -1429,7 +1618,7 @@ function writeConnectorConfig(configPath, sessionToken) {
   }
 }
 
-function readConnectorConfigToken(configPath) {
+function readConnectorConfigToken(configPath, providerId, profile) {
   let descriptor;
   try {
     const pathStat = lstatOrAbsent(configPath);
@@ -1464,11 +1653,52 @@ function readConnectorConfigToken(configPath) {
       || parsed === null
       || Array.isArray(parsed)
       || Object.getPrototypeOf(parsed) !== Object.prototype
-      || JSON.stringify(Object.keys(parsed).sort()) !== JSON.stringify(["sessionToken"])
-      || typeof parsed.sessionToken !== "string"
-      || !SESSION_TOKEN.test(parsed.sessionToken)
     ) {
       return CONFIG_INVALID;
+    }
+    const keys = Object.keys(parsed).sort();
+    if (JSON.stringify(keys) === JSON.stringify(["sessionToken"])) {
+      if (
+        profile.profileId !== "legacy-production"
+        || typeof parsed.sessionToken !== "string"
+        || !SESSION_TOKEN.test(parsed.sessionToken)
+      ) {
+        return profile.profileId === "legacy-production"
+          ? CONFIG_INVALID
+          : CONFIG_BINDING_MISMATCH;
+      }
+      return parsed.sessionToken;
+    }
+    if (JSON.stringify(keys) !== JSON.stringify(["binding", "schema", "sessionToken"])) {
+      return CONFIG_INVALID;
+    }
+    if (
+      parsed.schema !== LOCAL_CONNECTOR_CREDENTIAL_SCHEMA
+      || typeof parsed.sessionToken !== "string"
+      || !SESSION_TOKEN.test(parsed.sessionToken)
+      || typeof parsed.binding !== "object"
+      || parsed.binding === null
+      || Array.isArray(parsed.binding)
+      || Object.getPrototypeOf(parsed.binding) !== Object.prototype
+    ) {
+      return CONFIG_INVALID;
+    }
+    const bindingKeys = Object.keys(parsed.binding).sort();
+    if (
+      JSON.stringify(bindingKeys)
+      !== JSON.stringify([
+        "gatewayOrigin",
+        "gatewayProfileId",
+        "profileId",
+        "providerId",
+        "transportFamily",
+      ])
+    ) {
+      return CONFIG_INVALID;
+    }
+    const expectedBinding = transportBinding(profile, providerId);
+    if (!transportBindingsEqual(parsed.binding, expectedBinding)) {
+      return CONFIG_BINDING_MISMATCH;
     }
     return parsed.sessionToken;
   } catch {
@@ -1484,10 +1714,18 @@ function readConnectorConfigToken(configPath) {
   }
 }
 
-function createRedeemTransport({ fetchImpl, timeoutMs }) {
+function createRedeemTransport({ profile, fetchImpl, timeoutMs }) {
   return async function redeem(normalizedCode) {
-    const body = JSON.stringify({ data: { pairingCode: normalizedCode } });
-    const url = `${FIREBASE_CALLABLE_BASE}/${REDEEM_CALLABLE}`;
+    const legacy = profile.profileId === "legacy-production";
+    const body = JSON.stringify(legacy
+      ? { data: { pairingCode: normalizedCode } }
+      : {
+        schema: LOCAL_GATEWAY_REQUEST_SCHEMA,
+        payload: { pairingCode: normalizedCode },
+      });
+    const url = legacy
+      ? `${FIREBASE_CALLABLE_BASE}/${REDEEM_CALLABLE}`
+      : `${profile.gatewayOrigin}${CONNECTOR_LOCAL_GATEWAY_ROUTES.yipyapPair}`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     timer.unref?.();
@@ -1508,13 +1746,16 @@ function createRedeemTransport({ fetchImpl, timeoutMs }) {
         // fixed contract code. Redemption is never retried: a lost response
         // after server-side consumption is ambiguous and requires a new code.
         try {
-          parseRedeemEnvelope(responseText);
+          if (legacy) parseRedeemEnvelope(responseText);
+          else parseLocalGatewayEnvelope(responseText, { allowToken: true });
         } catch (error) {
           if (error instanceof ConnectorFailure && error.state !== "invalid_response") throw error;
         }
         fail("unavailable", "service_unavailable");
       }
-      return parseRedeemEnvelope(responseText);
+      return legacy
+        ? parseRedeemEnvelope(responseText)
+        : parseRedeemResult(parseLocalGatewayEnvelope(responseText, { allowToken: true }));
     } catch (error) {
       if (error instanceof ConnectorFailure) throw error;
       fail("unavailable", "network_unavailable");
@@ -1677,14 +1918,22 @@ export function createYipYapConnector({
   timeoutMs = DEFAULT_TIMEOUT_MS,
 } = {}) {
   if (!PROVIDER_IDS.has(providerId)) throw new TypeError("Unsupported YipYap provider id.");
-  const resolvedConfigPath = configPath ?? connectorConfigPath(providerId);
+  const profile = apiOriginProfile(COMPILED_API_ORIGIN_PROFILE_ID);
+  const selectedTransportBinding = transportBinding(profile, providerId);
+  const selectedTransportBindingKey = transportBindingKey(selectedTransportBinding);
+  const resolvedConfigPath = configPath
+    ?? connectorConfigPath(providerId, profile.profileId);
   if (typeof resolvedConfigPath !== "string" || resolvedConfigPath.length === 0) {
     throw new TypeError("YipYap connector config path is invalid.");
   }
   const resolvedGetToken = getToken ?? (() => {
-    const configured = readConnectorConfigToken(resolvedConfigPath);
+    const configured = readConnectorConfigToken(resolvedConfigPath, providerId, profile);
+    if (configured === CONFIG_BINDING_MISMATCH) {
+      fail("needs_reconnect", "transport_binding_mismatch");
+    }
     if (configured === CONFIG_INVALID) return undefined;
     if (configured !== CONFIG_ABSENT) return configured;
+    if (profile.profileId !== "legacy-production") return undefined;
     const legacyEnvironmentToken = process.env[SESSION_TOKEN_ENV];
     return legacyEnvironmentToken === "" ? undefined : legacyEnvironmentToken;
   });
@@ -1694,8 +1943,8 @@ export function createYipYapConnector({
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 60_000) {
     throw new TypeError("YipYap connector timeout is invalid.");
   }
-  const callCallable = createTransport({ getToken: resolvedGetToken, fetchImpl, timeoutMs });
-  const redeemCode = createRedeemTransport({ fetchImpl, timeoutMs });
+  const callCallable = createTransport({ profile, getToken: resolvedGetToken, fetchImpl, timeoutMs });
+  const redeemCode = createRedeemTransport({ profile, fetchImpl, timeoutMs });
   let readCycle = null;
   let proposalWindow = null;
 
@@ -1719,8 +1968,12 @@ export function createYipYapConnector({
           case "yipyapPair": {
             clearTeachingCycle();
             const normalizedCode = parseToolArguments(parsePairArguments, args);
+            const existing = readConnectorConfigToken(resolvedConfigPath, providerId, profile);
+            if (existing === CONFIG_BINDING_MISMATCH) {
+              fail("needs_reconnect", "transport_binding_mismatch");
+            }
             const sessionToken = await redeemCode(normalizedCode);
-            writeConnectorConfig(resolvedConfigPath, sessionToken);
+            writeConnectorConfig(resolvedConfigPath, sessionToken, providerId, profile);
             // The token variable dies here; the result names only the fact.
             return toolSuccess(Object.freeze({
               paired: true,
@@ -1738,6 +1991,7 @@ export function createYipYapConnector({
                 .every((scope) => status.visible.grantedScopes.includes(scope))
               ? Object.freeze({
                 tokenDigest: sessionTokenDigest(sessionToken),
+                transportBindingKey: selectedTransportBindingKey,
                 binding: status.binding,
                 settings: null,
               })
@@ -1748,7 +2002,11 @@ export function createYipYapConnector({
             parseToolArguments(parseEmptyArguments, args);
             const sessionToken = tokenFrom(resolvedGetToken);
             const tokenDigest = sessionTokenDigest(sessionToken);
-            if (readCycle === null || readCycle.tokenDigest !== tokenDigest) {
+            if (
+              readCycle === null
+              || readCycle.tokenDigest !== tokenDigest
+              || readCycle.transportBindingKey !== selectedTransportBindingKey
+            ) {
               clearTeachingCycle();
               fail("needs_reconnect", "read_cycle_invalid");
             }
@@ -1766,6 +2024,7 @@ export function createYipYapConnector({
               readCycle === null
               || readCycle.settings === null
               || readCycle.tokenDigest !== tokenDigest
+              || readCycle.transportBindingKey !== selectedTransportBindingKey
             ) {
               clearTeachingCycle();
               fail("needs_reconnect", "read_cycle_invalid");
@@ -1781,6 +2040,7 @@ export function createYipYapConnector({
               ? null
               : Object.freeze({
                 tokenDigest,
+                transportBindingKey: selectedTransportBindingKey,
                 binding: readCycle.binding,
                 languageTag: context.languageTag,
                 script: context.script,
@@ -1818,6 +2078,7 @@ export function createYipYapConnector({
                   proposalWindow === null
                   || proposalWindow.remaining < 1
                   || proposalWindow.tokenDigest !== tokenDigest
+                  || proposalWindow.transportBindingKey !== selectedTransportBindingKey
                   || !sameBinding(proposalWindow.binding, status.binding)
                   || proposalWindow.languageTag !== event.languageTag
                   || proposalWindow.script !== event.script

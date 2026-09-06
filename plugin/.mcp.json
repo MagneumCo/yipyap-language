@@ -6,10 +6,7 @@
         "${CLAUDE_PLUGIN_ROOT}/mcp/server.mjs",
         "--provider",
         "claude"
-      ],
-      "env": {
-        "YIPYAP_SESSION_TOKEN": "${YIPYAP_SESSION_TOKEN:-}"
-      }
+      ]
     }
   }
 }

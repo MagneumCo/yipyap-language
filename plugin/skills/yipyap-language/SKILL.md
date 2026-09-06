@@ -5,7 +5,7 @@ description: Use YipYap (Language)'s provider-neutral language-learning procedur
 
 # YipYap (Language)
 
-Use one procedure in Claude and ChatGPT/Codex. The connected v0.2 profile adds
+Use one procedure in Claude and ChatGPT/Codex. The connected profile adds
 one bounded account connector to the shared Skill and deterministic lifecycle
 carrier. The AI and this Skill are the conversational teaching surface. The
 YipYap app and service remain authoritative for authorization, Learning Mode,
@@ -246,7 +246,7 @@ track, instruction language, stored level, confirmed word, or account state.
 - Follow only the verified active `languageTag`, script, instruction language,
   stored level, and returned cap. Never infer a language from locale, assume
   Spanish, or continue when the selected language or script is unsupported.
-  v0.2.2 accepts the packet's bounded BCP 47 tag plus explicit matching script
+  The connector accepts the packet's bounded BCP 47 tag plus explicit matching script
   for either target or instruction language; it has no Spanish- or
   English-only allowlist. A host that cannot reliably render that selected pair
   still fails closed. The six pinned lexical-vector tracks are coverage, not a

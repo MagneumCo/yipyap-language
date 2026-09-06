@@ -1,6 +1,6 @@
 {
   "name": "yipyap-language",
-  "version": "0.2.2",
+  "version": "0.3.3",
   "description": "Provider-neutral YipYap learning with supported-host session bootstrap and a bounded account connector.",
   "author": {
     "name": "BDI Labs",
@@ -23,10 +23,7 @@
         "--provider",
         "codex"
       ],
-      "cwd": ".",
-      "env_vars": [
-        "YIPYAP_SESSION_TOKEN"
-      ]
+      "cwd": "."
     }
   },
   "interface": {

@@ -37,3 +37,19 @@ rules are:
     Candidate-bundle download and future provider staging/apply require
     explicit user acts, and downloaded bytes are not staged, installed, or
     active.
+23. **Production origin is finite and compile-time.** Version 0.3 selects only
+    the reviewed `future-production` row at `https://api.magneum.co`; the
+    connector accepts no runtime profile or endpoint override, redirect,
+    fallback, mirror, or dual write. Its provider/profile/gateway/origin-bound
+    credential is separate and never inherits a legacy token. One explicit,
+    consequence-aware promotion authorization may cover both the new default
+    and every non-deleted production installation without a second
+    installation-age approval. The app/service preserves the exact account,
+    installation, provider, transport, lifecycle state, exact granted scopes,
+    and customer/learning data by issuing separately bound future credentials
+    for still-authorized connections; revoked or disconnected installations
+    keep that state and receive no replacement credential. It never retags
+    legacy bearer bytes.
+    Transactional, idempotent preparation may abort with legacy untouched. A
+    committed target profile is forward-only and can only be repaired or
+    rolled forward—never downgraded, redirected, mirrored, or dual-written.

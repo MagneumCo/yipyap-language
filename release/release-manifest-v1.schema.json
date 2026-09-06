@@ -52,18 +52,24 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "apiOriginProfileId",
         "connectorProfile",
+        "credentialSchema",
+        "environmentTokenFallback",
+        "gatewayProfileId",
         "interfacePacketSha256",
         "productionBaseUrl",
-        "tokenEnvironmentKey",
         "callables",
         "upstreamPins"
       ],
       "properties": {
+        "apiOriginProfileId": { "const": "future-production" },
         "connectorProfile": { "const": "yipyap.provider-callables.v1" },
+        "credentialSchema": { "const": "yipyap.local-connector-credential.v1" },
+        "environmentTokenFallback": { "const": false },
+        "gatewayProfileId": { "const": "api-magneum-co-local-gateway.v1" },
         "interfacePacketSha256": { "const": "d729164310ac5be601888c215e67ee3aa1b9fead4fe257410c6b485f56ee9171" },
-        "productionBaseUrl": { "const": "https://us-central1-yipyap-language.cloudfunctions.net" },
-        "tokenEnvironmentKey": { "const": "YIPYAP_SESSION_TOKEN" },
+        "productionBaseUrl": { "const": "https://api.magneum.co" },
         "callables": {
           "const": [
             "providerReadConnectionStatus",

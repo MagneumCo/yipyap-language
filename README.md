@@ -1,8 +1,10 @@
 # YipYap (Language)
 
 The official provider-neutral YipYap (Language) plugin package for
-Claude and Codex. The same shared Skill is prepared for OpenAI's universal
-ChatGPT/Codex directory once its app-owned remote-service gates close. The Skill
+Claude and Codex. The app-owned remote MCP is live at
+`https://api.magneum.co`; the same shared Skill is prepared for OpenAI's
+universal ChatGPT/Codex directory once the separate directory-review gates
+close. The Skill
 is the conversational teaching surface: it follows the verified active track,
 prefers supplied vocabulary, and may generate useful items within the verified
 level dose and introduction cap. The YipYap service owns durable settings,
@@ -39,6 +41,21 @@ review, and learner truth.
 - Proposal sync records vocabulary membership and provenance only. The provider
   model cannot mark vocabulary known, grade a learner, promote a level, or
   manufacture learner evidence.
+- The v0.3 package selects the exact `future-production` profile at
+  `https://api.magneum.co`. It uses a separate provider/profile-bound
+  credential file and never inherits the legacy environment token or
+  credential. Existing installations move only under one explicit,
+  consequence-aware promotion authorization covering the default and every
+  non-deleted production installation—not through silent repointing or
+  repeated installation-age approvals.
+- The app/service migration preserves the exact account, installation,
+  provider, lifecycle state, exact granted scopes, and customer/learning data
+  while issuing distinct future-production credentials for still-authorized
+  connections. Revoked or disconnected installations keep that state and
+  receive no replacement credential. It never retags legacy bearer bytes.
+  Transactional, idempotent preparation may abort with legacy untouched; a
+  completed target-profile commit is forward-only and permits no redirect,
+  fallback, mirror, or dual write.
 
 ## Installation and updates
 
@@ -55,12 +72,20 @@ or provider-native/app-controlled reinstall of signed immutable v0.2.1 or
 later; do not weaken the old pin. Version 0.2.2 retains the v0.2.1 interface
 packet and follows the normal higher-sequence signed-update path from v0.2.1.
 
+The v0.3 line changes the signed runtime transport contract. Immutable v0.2.1
+and v0.2.2 updaters correctly reject it; do not weaken those pins or treat a
+channel notification as promotion authorization. That refusal blocks ordinary
+in-place update, not an explicitly authorized app/service cohort migration.
+One consequence-aware authorization may cover the new default and every
+non-deleted production installation without a second owner approval based only
+on installation age.
+
 The current checker/fetcher verifies the signed stable index, exact
 deterministic archive inventory, embedded release identity, and trust-root
 parity, then downloads an atomic candidate bundle plus its signed receipt. It
 does not expand and verify a filesystem tree, create provider staging, apply to
 a provider, or perform rollback. Do not treat a downloaded bundle as staged,
-installed, or active.
+installed, active, or authorized to migrate an installation.
 
 Never install or update from an unreviewed fork, mutable branch archive, copied
 command, or unsigned release record. See [UPDATE-POLICY.md](UPDATE-POLICY.md).

@@ -19,6 +19,34 @@ rules below.
 Version 0.2.2 retains the v0.2.1 interface contract and is therefore a normal
 higher-sequence signed update from v0.2.1.
 
+The v0.3 line selects the `future-production` local-gateway profile at
+`https://api.magneum.co`, uses a profile-bound credential file, and removes
+legacy environment-token forwarding from new provider manifests. Immutable
+v0.2.1 and v0.2.2 updaters correctly reject this different runtime contract.
+That refusal blocks ordinary in-place update; it does not exclude existing
+production installations from an owner-approved promotion.
+
+One explicit, consequence-aware promotion authorization may both make
+`future-production` the default and cover every non-deleted production
+installation. It is never inferred from signing, publication,
+download, installation, or service deployment, but it does not require a
+second approval per installation merely because the installation already
+exists. Missing and legacy bindings migrate, exact future bindings count as
+idempotent no-ops, revoked or disconnected installations keep that state and
+receive no replacement credential, and malformed or contradictory rows block
+instead of being skipped. Isolated development is outside the production
+sweep. The app and service own the migration. They preserve continuity of the
+exact account, installation, provider, transport, lifecycle state, exact
+granted scopes, and customer/learning data while issuing separately bound
+future-production credentials for still-authorized connections. Legacy bearer
+bytes remain unchanged and are never copied, edited, retagged, or inherited.
+
+Preparation and commit are transactional, idempotent, and resumable. A
+precommit abort leaves the legacy binding and credential untouched. After
+commit, the target API-profile high-water is forward-only: repair or roll
+forward at `future-production`; never downgrade to legacy routing or add a
+redirect, fallback, mirror, dual read, or dual write.
+
 Update checking is separate from provider startup. The lifecycle hook never
 contacts GitHub or changes installed files. A separately trusted,
 YipYap-controlled surface may check automatically on a bounded cadence or for
@@ -35,9 +63,10 @@ do not treat a downloaded bundle as staged, installed, or active.
 The new release becomes active only after a complete provider restart and a
 new root task. Failed verification or installation leaves the prior verified
 release untouched. The future controlled apply must preserve that release for
-explicit rollback and persist a sequence-plus-manifest high-water record
-outside versioned artifacts. Downgrades require an explicit rollback act; they
-are never accepted as an ordinary update.
+precommit recovery and persist a sequence-plus-manifest high-water record
+outside versioned artifacts. Ordinary artifact rollback may not lower a
+committed API-profile high-water or reactivate legacy routing; postcommit
+recovery is forward-only.
 
 Official update records contain data only and never supply shell commands.
 

@@ -19,8 +19,11 @@ const UPDATE_SCHEMA_VERSION = "yipyap.update-index.v1";
 const RELEASE_SCHEMA_VERSION = "yipyap.public-release.v1";
 const PROFILE_SCHEMA_VERSION = "yipyap.installed-release-profile.v1";
 const PUBLIC_RELEASE_BASE = `https://github.com/${PUBLIC_REPOSITORY}/releases/download`;
-const PRODUCTION_BASE_URL = "https://us-central1-yipyap-language.cloudfunctions.net";
-const TOKEN_ENVIRONMENT_KEY = "YIPYAP_SESSION_TOKEN";
+const PRODUCTION_BASE_URL = "https://api.magneum.co";
+const API_ORIGIN_PROFILE_ID = "future-production";
+const CREDENTIAL_SCHEMA = "yipyap.local-connector-credential.v1";
+const ENVIRONMENT_TOKEN_FALLBACK = false;
+const GATEWAY_PROFILE_ID = "api-magneum-co-local-gateway.v1";
 const CONNECTOR_PROFILE = "yipyap.provider-callables.v1";
 const INTERFACE_PACKET_SHA256 =
   "d729164310ac5be601888c215e67ee3aa1b9fead4fe257410c6b485f56ee9171";
@@ -455,11 +458,14 @@ function validateReleaseManifest(manifest, index) {
   exactKeys(
     manifest.runtimeContract,
     [
+      "apiOriginProfileId",
       "callables",
       "connectorProfile",
+      "credentialSchema",
+      "environmentTokenFallback",
+      "gatewayProfileId",
       "interfacePacketSha256",
       "productionBaseUrl",
-      "tokenEnvironmentKey",
       "upstreamPins",
     ],
     "release runtime contract",
@@ -470,10 +476,13 @@ function validateReleaseManifest(manifest, index) {
     "release upstream pins",
   );
   if (
-    manifest.runtimeContract.connectorProfile !== CONNECTOR_PROFILE
+    manifest.runtimeContract.apiOriginProfileId !== API_ORIGIN_PROFILE_ID
+    || manifest.runtimeContract.connectorProfile !== CONNECTOR_PROFILE
+    || manifest.runtimeContract.credentialSchema !== CREDENTIAL_SCHEMA
+    || manifest.runtimeContract.environmentTokenFallback !== ENVIRONMENT_TOKEN_FALLBACK
+    || manifest.runtimeContract.gatewayProfileId !== GATEWAY_PROFILE_ID
     || manifest.runtimeContract.interfacePacketSha256 !== INTERFACE_PACKET_SHA256
     || manifest.runtimeContract.productionBaseUrl !== PRODUCTION_BASE_URL
-    || manifest.runtimeContract.tokenEnvironmentKey !== TOKEN_ENVIRONMENT_KEY
     || JSON.stringify(manifest.runtimeContract.callables) !== JSON.stringify(CALLABLES)
     || JSON.stringify(manifest.runtimeContract.upstreamPins) !== JSON.stringify(UPSTREAM_PINS)
   ) {

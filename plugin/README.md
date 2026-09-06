@@ -11,6 +11,35 @@ privacy, sync, review, and learner records.
 A new or disconnected installation is safe by default: it operates at
 effective level L0 and introduces no YipYap teaching items.
 
+The v0.3 package selects the exact `future-production` API-origin profile at
+`https://api.magneum.co`. Its connector uses a provider- and profile-bound
+local credential file and does not inherit the legacy environment token or
+legacy credential path. Existing v0.2 installations are never silently
+repointed. One explicit, consequence-aware promotion authorization may both
+make `future-production` the default and cover every non-deleted production
+installation; it does not require a second approval merely because an
+installation already exists.
+
+The app and service, not this plugin or updater, own that cohort migration.
+They must preserve continuity of the exact account, installation, provider,
+exact granted scopes, lifecycle state, and customer/learning data while issuing
+a separately bound future-production credential for each still-authorized
+connection. Revoked or disconnected installations keep that state and receive
+no replacement credential; their next connection path moves to future
+production. Legacy bearer bytes remain unchanged and are never copied,
+retagged, or inherited. Missing and legacy bindings migrate, an exact future
+binding counts as an idempotent no-op, and malformed or contradictory rows
+block instead of disappearing from accounting. Isolated development is never
+part of the production sweep. Preparation and commit are transactional,
+idempotent, and resumable: an abort before commit leaves the legacy binding
+untouched, while a completed target-profile commit is forward-only and must be
+repaired or rolled forward. It never redirects, falls back, mirrors, or dual
+writes to the legacy origin.
+The app-owned production origin is live and has passed a content-free
+four-surface synthetic read-only window; that service result is not proof that
+this v0.3 package is signed, installed, activated, directory-listed, or
+customer-promoted.
+
 ## What installation does
 
 Installation makes the shared Skill and connector available. It does not:
@@ -27,7 +56,7 @@ teaching settings, and teaching context reads. After a valid draft, the Skill
 may best-effort sync a maximum-12, exact-tuple-deduplicated ephemeral set of
 generated vocabulary through `item_proposed`; sync never gates teaching.
 
-The v0.2.2 language boundary is multilingual: target and instruction pairs use
+The shared language boundary is multilingual: target and instruction pairs use
 the packet's bounded BCP 47 tag grammar plus an explicit matching script. There
 is no Spanish- or English-only allowlist. The six tracks in the pinned lexical
 normalization vectors are conformance coverage, not the product boundary. A

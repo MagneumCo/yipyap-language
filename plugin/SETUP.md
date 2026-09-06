@@ -10,7 +10,8 @@ published YipYap (Language).
   (`>=22.23.1 <23`).
 - A supported host with the YipYap (Language) plugin installed and enabled.
 - A YipYap account managed through the YipYap app.
-- Network access to the fixed production connector service.
+- Network access to the fixed production connector service at
+  `https://api.magneum.co`.
 
 Starting without an account connection is valid. The Skill remains useful for
 explaining its teaching model and for direct language questions, but it uses
@@ -39,10 +40,15 @@ log, a public issue, or a support message. The supported flow does not require
 a person or model to see token material.
 
 The local connector reads the credential for each invocation, so successful
-pairing can be observed without restarting the connector. Its default file is
-`connector-<provider>.json` inside the current user's `.yipyap` home-directory
-folder; on hosts that enforce POSIX modes, the folder is `0700` and the file is
-`0600`. The credential stays outside versioned plugin files.
+pairing can be observed without restarting the connector. The v0.3
+future-production file is
+`connector-<provider>-future-production.json` inside the current user's
+`.yipyap` home-directory folder; on hosts that enforce POSIX modes, the folder
+is `0700` and the file is `0600`. The credential stays outside versioned plugin
+files and is bound to the exact provider, profile, transport, gateway profile,
+and `https://api.magneum.co` origin. The v0.3 host manifests do not forward
+`YIPYAP_SESSION_TOKEN`, and the new profile never reads the unchanged legacy
+`connector-<provider>.json` file.
 
 Pairing succeeds only when the app-owned code issuer and redemption service
 are deployed and compatible with this package. A local package test is not
@@ -149,14 +155,43 @@ status.
 
 Version 0.2.2 retains the v0.2.1 interface packet and is therefore a normal
 same-contract signed sequence update from v0.2.1. It narrows the provider event
-schema to the five Rule 43 kinds; it does not add account authority. Future
-same-contract updates continue to use the signed sequence rules.
+schema to the five Rule 43 kinds; it does not add account authority.
+
+The v0.3 line changes the compiled transport profile and signed runtime
+contract to `future-production` at `https://api.magneum.co`. Immutable v0.2.1
+and v0.2.2 updaters correctly reject that different contract. That rejection
+blocks an ordinary in-place update; it does not require a second owner approval
+merely because a production installation already exists.
+
+One explicit, consequence-aware promotion authorization may make
+`future-production` the default and cover every non-deleted production
+installation. Missing and legacy bindings migrate; an exact future binding is
+an idempotent no-op that still counts; revoked or disconnected installations
+keep that state and move their next connection path without receiving a
+replacement credential; and malformed or contradictory rows block rather than
+being skipped. Isolated development is outside this production scope.
+
+The app and service own the migration. For each still-authorized connection,
+they must preserve the exact account, installation, provider, transport,
+exact granted scopes, lifecycle state, and customer/learning data while staging
+a separately bound future-production credential in its provider-specific
+mode-`0600` file. Legacy bearer bytes remain unchanged and must never be
+copied, edited, retagged, or inherited as the target credential. Provider OAuth
+or host confirmation may still be required by its security protocol; that is
+not a second YipYap owner-approval gate.
+
+Preparation and commit must be transactional, idempotent, and resumable. An
+abort before commit leaves the legacy binding and credential untouched. After
+the target profile commits, its profile high-water is forward-only: repair or
+roll forward at `future-production`, then verify a fresh read-only connection
+cycle. Never downgrade that installation to legacy routing or introduce a
+redirect, fallback, mirror, or dual write.
 
 ## Public-directory boundary
 
 The real OpenAI install path is a public MCP+Skill plugin submitted through the
 OpenAI plugin portal, not a copied developer-mode connection. Create the
-submission from the production MCP URL `https://bdilabs.dev/mcp`, scan its five
+submission from the production MCP URL `https://api.magneum.co`, scan its five
 tools, attach the reviewed YipYap (Language) Skill bytes, complete publisher and
 domain verification, and use reviewer-safe credentials plus the approved five
 positive and three negative cases. Do not derive a public `.app.json`, plugin
