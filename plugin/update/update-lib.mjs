@@ -6,7 +6,7 @@ import {
 
 export const UPDATER_VERSION = "1.0.0";
 export const PLUGIN_ID = "yipyap-language";
-export const PUBLIC_REPOSITORY = "bdilabs247/yipyap-language";
+export const PUBLIC_REPOSITORY = "MagneumCo/yipyap-language";
 export const SIGNING_KEY_ID = "yipyap-release-ed25519-v1";
 export const UPDATE_INDEX_URL =
   `https://raw.githubusercontent.com/${PUBLIC_REPOSITORY}/main/release/latest.json`;

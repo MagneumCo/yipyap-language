@@ -8,6 +8,13 @@ service remain authoritative for account access, Learning Mode, durable
 settings, the master My Lexicon, cross-provider combination and deduplication,
 privacy, sync, review, and learner records.
 
+The hosted YipYap connector is the primary product surface: claude.ai, the
+Claude mobile app, and ChatGPT connect to `https://api.magneum.co` directly,
+and the service carries the same teaching procedure as instructions and a
+prompt. This plugin is the developer-host add-on for Claude Code and Codex,
+where a packaged Skill and lifecycle hook can run locally. Both surfaces share
+one teaching meaning.
+
 A new or disconnected installation is safe by default: it operates at
 effective level L0 and introduces no YipYap teaching items.
 
@@ -79,7 +86,7 @@ only these bounded claims:
 | Surface | Startup behavior |
 | --- | --- |
 | Claude Code or Cowork | A supported host may run the packaged, trusted `SessionStart` carrier. When it does, the carrier invokes the shared Skill for a fresh root task or restores it after continuation. Installation alone is not evidence that the carrier ran. |
-| Claude Chat | Ordinary Claude Chat does not run the packaged lifecycle hook. Invoke YipYap explicitly. |
+| Claude Chat | Ordinary Claude Chat does not run the packaged lifecycle hook. Use the hosted YipYap connector there; if this plugin is also present, invoke YipYap explicitly. |
 | Codex | A Codex host that supports and runs the packaged lifecycle carrier may bootstrap or restore the shared Skill. Verify the current host before claiming automatic startup. |
 | ChatGPT | ChatGPT does not run Codex lifecycle hooks. Invoke YipYap explicitly; the connected public-directory experience also depends on the app-owned remote MCP service. |
 

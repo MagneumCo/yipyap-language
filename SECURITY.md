@@ -4,7 +4,7 @@ Do not publish credentials, connector tokens, customer data, or exploit details
 in a public issue.
 
 Use GitHub's **Security** tab and
-[private vulnerability reporting](https://github.com/bdilabs247/yipyap-language/security/advisories/new)
+[private vulnerability reporting](https://github.com/MagneumCo/yipyap-language/security/advisories/new)
 for this repository. Private vulnerability reporting must be enabled before
 publication. Include the affected release version, provider, reproducible
 impact, and the minimum evidence needed to investigate. Never include a live

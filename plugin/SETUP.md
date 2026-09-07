@@ -6,8 +6,8 @@ published YipYap (Language).
 
 ## Requirements
 
-- Node.js 22.23.1 or later within major version 22
-  (`>=22.23.1 <23`).
+- Node.js 22.23.1 or later (`>=22.23.1`). The package is verified on the 22
+  and 26 majors; hosts launch it with their own `node`.
 - A supported host with the YipYap (Language) plugin installed and enabled.
 - A YipYap account managed through the YipYap app.
 - Network access to the fixed production connector service at
@@ -16,6 +16,27 @@ published YipYap (Language).
 Starting without an account connection is valid. The Skill remains useful for
 explaining its teaching model and for direct language questions, but it uses
 effective L0 and introduces no account-selected YipYap items.
+
+## Install on a developer host
+
+The hosted YipYap connector is the primary product surface for claude.ai, the
+Claude mobile app, and ChatGPT; nothing is installed there. This plugin is the
+developer-host add-on for Claude Code and Codex. Install it from the `yipyap`
+marketplace at the official public repository, pinned to an immutable release
+tag, then fully restart the host and open a new session:
+
+```sh
+claude plugin marketplace add MagneumCo/yipyap-language
+claude plugin install yipyap-language@yipyap
+```
+
+```sh
+codex plugin marketplace add MagneumCo/yipyap-language --ref v0.3.4
+codex plugin add yipyap-language@yipyap
+```
+
+The YipYap app's AI-connections walkthrough remains the trust anchor for the
+release key and issues the one-time pairing code used below.
 
 ## Pair without exposing a session token
 
@@ -136,9 +157,9 @@ context, and it cannot enable Learning Mode or change the stored level.
 
 ### The connector does not launch
 
-Confirm that the host is using Node.js `>=22.23.1 <23` and that the plugin is
-enabled. A different Node major version is outside this package's declared
-runtime contract.
+Confirm that the host's `node` is 22.23.1 or later and that the plugin is
+enabled. Versions below that minimum are refused by the updater and are not
+supported.
 
 ## Upgrade compatibility
 

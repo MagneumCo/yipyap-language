@@ -1,11 +1,11 @@
 {
   "schemaVersion": "yipyap.public-release.v1",
   "pluginId": "yipyap-language",
-  "version": "0.3.3",
-  "releaseTag": "v0.3.3",
-  "repository": "bdilabs247/yipyap-language",
+  "version": "0.3.4",
+  "releaseTag": "v0.3.4",
+  "repository": "MagneumCo/yipyap-language",
   "channel": "stable",
-  "releaseSequence": 6,
+  "releaseSequence": 7,
   "activation": "restart-new-root",
   "signingKeyId": "yipyap-release-ed25519-v1",
   "minimumHosts": {
@@ -35,7 +35,7 @@
       "lexicalNormalizationVectorsSha256": "46614f8277e405aa77595dbadea61f31e77d55acbb4f17ec1ddb74d4d08a112b"
     }
   },
-  "contentRootSha256": "8c0736e0af959e08051dfd007c0b432c15a26101faebb0d25de0c381c59989bd",
+  "contentRootSha256": "925a250aaeeca50673ac9c3c3dc5f6b1e460058d912a40b832713b9559d8d0b5",
   "files": [
     {
       "path": ".agents/plugins/marketplace.json",
@@ -81,21 +81,21 @@
     },
     {
       "path": "README.md",
-      "bytes": 5779,
+      "bytes": 6160,
       "mode": "0644",
-      "sha256": "51b46c6ba42624bec80ac88744f531c6a1544de86776aaee0d87a6a51b821854"
+      "sha256": "2f59b988e3b9fd832e3050e8d30c36fa5d0da93af9c9ecba5bd6ffe25b338476"
     },
     {
       "path": "SECURITY.md",
-      "bytes": 883,
+      "bytes": 882,
       "mode": "0644",
-      "sha256": "90b4dfa84f2a164dc0ca0026ea0b190f514f722ea1a21e433612eeceabe9513c"
+      "sha256": "47bcfa5c4af0081db1640deddcf02a94009669b36ea74d882aed54c77c60a727"
     },
     {
       "path": "UPDATE-POLICY.md",
-      "bytes": 4463,
+      "bytes": 5050,
       "mode": "0644",
-      "sha256": "704bea5de505fb9abb0c39e0ec187f23b8359301da8a7831cbd89fdf90fb2a95"
+      "sha256": "62024c26f65e5b3f3a2b37496f509fd563cab72ede0640126ba8063ab6fe7361"
     },
     {
       "path": "nextsession.md",
@@ -105,15 +105,15 @@
     },
     {
       "path": "plugin/.claude-plugin/plugin.json",
-      "bytes": 676,
+      "bytes": 673,
       "mode": "0644",
-      "sha256": "4142587425815bd8731da22f31b22f07808543a1bbb7acf9543381bc16b297c9"
+      "sha256": "e0e7fbce4fde6f9dd69f3db0788a6ec3d61b01b78f5f3b75bd6ce2def459ac93"
     },
     {
       "path": "plugin/.codex-plugin/plugin.json",
-      "bytes": 1487,
+      "bytes": 1484,
       "mode": "0644",
-      "sha256": "947f3225ef8b5409debdff2169526db9e08d58fb0f2066b7e1a3fa612c140899"
+      "sha256": "2a72c63da5b94ddefd0bd7e0614d163c264a016404192623081a1a40878f602b"
     },
     {
       "path": "plugin/.mcp.json",
@@ -123,15 +123,15 @@
     },
     {
       "path": "plugin/README.md",
-      "bytes": 8899,
+      "bytes": 9374,
       "mode": "0644",
-      "sha256": "2fe0350690f32df2740169a92aed65c344d453d388430621035ff50cdbb8138f"
+      "sha256": "cded8294fe8ba96cbed7ea3992b65ac690a5990ce3e2b8a7a81d42daa0020f3e"
     },
     {
       "path": "plugin/SETUP.md",
-      "bytes": 10785,
+      "bytes": 11608,
       "mode": "0644",
-      "sha256": "126c01bac4fe6c3397d4ba899c4c7a4c5d54ef07f2a7fc781098aa59b388b15c"
+      "sha256": "91fd7a90c31c3abbb8210e40e6dd0519ef7cb4ae5d5af037ffd859e771d95a40"
     },
     {
       "path": "plugin/hooks/hooks.json",
@@ -143,7 +143,7 @@
       "path": "plugin/mcp/connector-core.mjs",
       "bytes": 76153,
       "mode": "0644",
-      "sha256": "9893e5254cbacf2da5c389818d333a42324e75f5f9504c887b2c12da02fed989"
+      "sha256": "0590af3138949b2d7386f5a70eb3114c7f7aab54f5f0c1c16e6b9ab4d17fb425"
     },
     {
       "path": "plugin/mcp/server.mjs",
@@ -209,13 +209,13 @@
       "path": "plugin/update/release-profile.json",
       "bytes": 210,
       "mode": "0644",
-      "sha256": "b39130c1a89a96e57c422c22a55672a1763fc00063598e98ee63cb15babce1a8"
+      "sha256": "6340e2d12e36efdf81d7d80baeb1210bbc62ec6ba58c4713865a89227e6425b5"
     },
     {
       "path": "plugin/update/update-lib.mjs",
-      "bytes": 29349,
+      "bytes": 29348,
       "mode": "0644",
-      "sha256": "c5b720b46e9a53d3a0bad127b1c80316a77c50a9ba904e53dd3841d7bb441741"
+      "sha256": "5069301332bab6e0ca135e8476d3488b0504860f79a2ae5b0308723a46e0cb68"
     },
     {
       "path": "plugin/update/yipyap-release-ed25519-v1.pem",

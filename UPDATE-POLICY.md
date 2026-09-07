@@ -73,3 +73,12 @@ Official update records contain data only and never supply shell commands.
 Signature, inventory, and sequence verification protect against a tampered
 feed, mirror, or archive. They cannot protect a machine whose local OS or root
 administrator has replaced both the updater and its pinned trust root.
+
+Version 0.3.4, release sequence 7, moves the official public repository to
+`MagneumCo/yipyap-language`. Its updater pins that location for the signed
+stable index and release assets. Immutable v0.3.3 installations keep the
+previous location pinned; GitHub redirects it after the repository transfer,
+and the v0.3.3 updater correctly rejects the moved asset URLs, so those
+installations cross to v0.3.4 by a provider-native marketplace update or
+reinstall rather than by self-update. The declared Node.js requirement is
+22.23.1 or later; the package is verified on the 22 and 26 majors.

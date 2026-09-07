@@ -1,10 +1,11 @@
 # YipYap (Language)
 
 The official provider-neutral YipYap (Language) plugin package for
-Claude and Codex. The app-owned remote MCP is live at
-`https://api.magneum.co`; the same shared Skill is prepared for OpenAI's
-universal ChatGPT/Codex directory once the separate directory-review gates
-close. The Skill
+Claude Code and Codex, published from `MagneumCo/yipyap-language`. The
+hosted YipYap connector at `https://api.magneum.co` is the primary product
+surface for claude.ai, the Claude mobile app, and ChatGPT; this plugin is the
+developer-host add-on that carries the same shared Skill and a lifecycle
+hook. The Skill
 is the conversational teaching surface: it follows the verified active track,
 prefers supplied vocabulary, and may generate useful items within the verified
 level dose and introduction cap. The YipYap service owns durable settings,
@@ -59,12 +60,16 @@ review, and learner truth.
 
 ## Installation and updates
 
-Install through the YipYap app's AI-connections walkthrough, which supplies
-the release-key trust pin independently of this repository. Never bootstrap
-trust from a key downloaded beside the plugin or install from mutable `main`.
-A provider marketplace becomes an official first-install path only when its
-verified publisher and immutable package evidence are published. Releases
-activate only after a complete provider restart and a new root task.
+On claude.ai, the Claude mobile app, and ChatGPT, connect the hosted YipYap
+connector from the YipYap app; no plugin is installed there. On Claude Code
+and Codex, install this plugin from the `yipyap` marketplace at the official
+public repository `MagneumCo/yipyap-language`, pinned to an immutable release
+tag, then fully restart the host and open a new session. The YipYap app's
+AI-connections walkthrough supplies the release-key trust pin independently of
+this repository. Never bootstrap trust from a key downloaded beside the plugin
+or install from mutable `main`. Releases activate only after a complete
+provider restart and a new root task. The package requires Node.js 22.23.1 or
+later and is verified on the 22 and 26 majors.
 
 The immutable v0.2.0 updater exact-pins the pre-pairing interface contract and
 correctly rejects v0.2.1. Cross that one-time boundary only with a fresh install

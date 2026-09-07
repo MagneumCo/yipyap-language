@@ -30,7 +30,7 @@ import { dirname, join } from "node:path";
 export const FIREBASE_CALLABLE_BASE =
   "https://us-central1-yipyap-language.cloudfunctions.net";
 export const SESSION_TOKEN_ENV = "YIPYAP_SESSION_TOKEN";
-export const CONNECTOR_VERSION = "0.3.3";
+export const CONNECTOR_VERSION = "0.3.4";
 
 export const API_ORIGIN_PROFILE_SCHEMA = "yipyap.api-origin-profile.v1";
 export const LOCAL_CONNECTOR_CREDENTIAL_SCHEMA =
