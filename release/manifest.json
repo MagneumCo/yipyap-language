@@ -1,11 +1,11 @@
 {
   "schemaVersion": "yipyap.public-release.v1",
   "pluginId": "yipyap-language",
-  "version": "0.3.4",
-  "releaseTag": "v0.3.4",
+  "version": "0.3.5",
+  "releaseTag": "v0.3.5",
   "repository": "MagneumCo/yipyap-language",
   "channel": "stable",
-  "releaseSequence": 7,
+  "releaseSequence": 8,
   "activation": "restart-new-root",
   "signingKeyId": "yipyap-release-ed25519-v1",
   "minimumHosts": {
@@ -35,7 +35,7 @@
       "lexicalNormalizationVectorsSha256": "46614f8277e405aa77595dbadea61f31e77d55acbb4f17ec1ddb74d4d08a112b"
     }
   },
-  "contentRootSha256": "925a250aaeeca50673ac9c3c3dc5f6b1e460058d912a40b832713b9559d8d0b5",
+  "contentRootSha256": "9f7d5dc1a0e5aad5d992e48e23f4cf94daa15a1acebc612cfca5a7d9b2afb2fa",
   "files": [
     {
       "path": ".agents/plugins/marketplace.json",
@@ -51,9 +51,9 @@
     },
     {
       "path": ".claude-plugin/marketplace.json",
-      "bytes": 318,
+      "bytes": 320,
       "mode": "0644",
-      "sha256": "be3b362bbd70ce6c839203b649c89080b55211be3f268e8044e6efe6317deca4"
+      "sha256": "c7bed427af040f57aeeeed957dde3ce20cbeef76d8793a34545bb34fe1664d97"
     },
     {
       "path": ".gitignore",
@@ -105,15 +105,15 @@
     },
     {
       "path": "plugin/.claude-plugin/plugin.json",
-      "bytes": 673,
+      "bytes": 674,
       "mode": "0644",
-      "sha256": "e0e7fbce4fde6f9dd69f3db0788a6ec3d61b01b78f5f3b75bd6ce2def459ac93"
+      "sha256": "eb20f5e2c5c8c990331022a9163dd5f767f95f89dc5a9bb40802280c21be52cc"
     },
     {
       "path": "plugin/.codex-plugin/plugin.json",
-      "bytes": 1484,
+      "bytes": 1486,
       "mode": "0644",
-      "sha256": "2a72c63da5b94ddefd0bd7e0614d163c264a016404192623081a1a40878f602b"
+      "sha256": "c656a8a90d98e0d7cdc9c5b4f0c4d24fb88ef755b1dec7ee5f74c32ef1f35066"
     },
     {
       "path": "plugin/.mcp.json",
@@ -131,7 +131,7 @@
       "path": "plugin/SETUP.md",
       "bytes": 11608,
       "mode": "0644",
-      "sha256": "91fd7a90c31c3abbb8210e40e6dd0519ef7cb4ae5d5af037ffd859e771d95a40"
+      "sha256": "39557dccbfbef5d2bda1fd3a6983db9ae286a3ea4b9a75a4217dda01802be74a"
     },
     {
       "path": "plugin/hooks/hooks.json",
@@ -143,7 +143,7 @@
       "path": "plugin/mcp/connector-core.mjs",
       "bytes": 76153,
       "mode": "0644",
-      "sha256": "0590af3138949b2d7386f5a70eb3114c7f7aab54f5f0c1c16e6b9ab4d17fb425"
+      "sha256": "3bb3bf64e8dd9b258c96d86127e44094fbf9f6326dcf3d21923384f82c9abbbe"
     },
     {
       "path": "plugin/mcp/server.mjs",
@@ -209,7 +209,7 @@
       "path": "plugin/update/release-profile.json",
       "bytes": 210,
       "mode": "0644",
-      "sha256": "6340e2d12e36efdf81d7d80baeb1210bbc62ec6ba58c4713865a89227e6425b5"
+      "sha256": "600883d10866a5f92ed49f1d127106517fe32ed85708c890040362ba40624a86"
     },
     {
       "path": "plugin/update/update-lib.mjs",

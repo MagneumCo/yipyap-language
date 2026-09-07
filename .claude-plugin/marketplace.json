@@ -1,9 +1,9 @@
 {
   "name": "yipyap",
   "owner": {
-    "name": "BDI Labs"
+    "name": "MagneumCo"
   },
-  "description": "Official YipYap (Language) plugins from BDI Labs.",
+  "description": "Official YipYap (Language) plugins from MagneumCo.",
   "plugins": [
     {
       "name": "yipyap-language",

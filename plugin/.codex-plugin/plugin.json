@@ -1,9 +1,9 @@
 {
   "name": "yipyap-language",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "Provider-neutral YipYap learning with supported-host session bootstrap and a bounded account connector.",
   "author": {
-    "name": "BDI Labs",
+    "name": "MagneumCo",
     "url": "https://github.com/MagneumCo"
   },
   "homepage": "https://github.com/MagneumCo/yipyap-language",
@@ -30,7 +30,7 @@
     "displayName": "YipYap (Language)",
     "shortDescription": "Language learning with YipYap",
     "longDescription": "Public YipYap (Language) read-first release with supported-host fresh-session bootstrap and one shared language Skill. Its bounded connector reads verified account settings and teaching context; missing or unverified state fails closed to L0.",
-    "developerName": "BDI Labs",
+    "developerName": "MagneumCo",
     "category": "Education & Research",
     "capabilities": [
       "Read",

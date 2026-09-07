@@ -31,7 +31,7 @@ claude plugin install yipyap-language@yipyap
 ```
 
 ```sh
-codex plugin marketplace add MagneumCo/yipyap-language --ref v0.3.4
+codex plugin marketplace add MagneumCo/yipyap-language --ref v0.3.5
 codex plugin add yipyap-language@yipyap
 ```
 
