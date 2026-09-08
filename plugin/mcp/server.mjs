@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { pathToFileURL } from "node:url";
+
 import { CONNECTOR_VERSION, createYipYapConnector } from "./connector-core.mjs";
 
 const MAX_STDIN_LINE_BYTES = 128 * 1024;
@@ -10,6 +12,21 @@ function providerFromArgv(argv) {
     throw new TypeError("Expected --provider with one host id.");
   }
   return argv[1];
+}
+
+// `import.meta.url` is a percent-encoded file URL. Comparing it against a raw
+// `file://` + argv[1] is false for any install path containing a space, which
+// leaves the process running with no handler attached: it reads nothing, writes
+// nothing, and exits 0 while the host reports a failed connection. Claude
+// desktop installs plugins under "Application Support", so encode both sides.
+function isMainModule(moduleUrl) {
+  const entry = process.argv[1];
+  if (typeof entry !== "string" || entry.length === 0) return false;
+  try {
+    return pathToFileURL(entry).href === moduleUrl;
+  } catch {
+    return false;
+  }
 }
 
 function jsonRpcError(id, code, message) {
@@ -114,7 +131,7 @@ export async function runStdioServer({ stdin, stdout, connector }) {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url)) {
   let connector;
   try {
     connector = createYipYapConnector({ providerId: providerFromArgv(process.argv.slice(2)) });

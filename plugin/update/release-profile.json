@@ -1,8 +1,8 @@
 {
   "schemaVersion": "yipyap.installed-release-profile.v1",
   "pluginId": "yipyap-language",
-  "version": "0.3.5",
-  "releaseSequence": 8,
+  "version": "0.3.6",
+  "releaseSequence": 9,
   "channel": "stable",
   "signingKeyId": "yipyap-release-ed25519-v1"
 }
