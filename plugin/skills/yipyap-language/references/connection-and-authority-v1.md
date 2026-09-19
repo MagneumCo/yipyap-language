@@ -1,14 +1,23 @@
 # Connection and authority boundary v1
 
+## Static help is outside the account path
+
+Exact whole-message `YipYap help` returns the packaged static menu before any
+startup, restore or ordinary account reads. It makes no Connector call, including
+status, settings, context, lexicon, pairing and events. It starts no authorization,
+settings write, update check/fetch/apply, installation or teaching footer.
+It works without an account connection and asserts no current account state.
+The later teaching path still requires its own fresh ordered reads.
+
 ## Keep activation layers independent
 
 1. Package installation places a reviewed artifact on a provider host.
 2. Plugin enablement makes the shared Skill and lifecycle carrier discoverable.
 3. Root-session startup or restoration delivers the reviewed lifecycle marker.
-4. Only an explicit setup request may redeem an app-issued one-time code through
-   `yipyapPair` and store the returned opaque session credential locally.
-5. The fixed connector can reach the bounded YipYap provider service with that
-   host-local credential.
+4. An explicit setup request uses the host's supported authorization route:
+   OAuth for hosted ChatGPT, or `yipyapPair` for a local connector host that
+   exposes it. The provider or connector keeps credentials out of model context.
+5. The authenticated transport can reach the bounded YipYap provider service.
 6. A fresh binding round trip establishes Connected state.
 7. Learning Mode is separately controlled by the account holder on a YipYap
    surface and evaluated privately by the service.
@@ -21,12 +30,15 @@ prove that the current reply may be mixed.
 
 ## Fixed connector surface
 
-The provider bridge exposes exactly one explicit pairing bootstrap plus five
-authenticated provider operations at a fixed production service origin:
+The local provider bridge exposes
+exactly one explicit pairing bootstrap plus five
+authenticated provider operations at a fixed production service origin.
+Hosted ChatGPT exposes only the five authenticated operations; its setup uses
+the provider's OAuth flow, not a sixth remote tool:
 
 | Operation | Purpose | Ordinary rendering |
 | --- | --- | --- |
-| `yipyapPair` | Redeem one short app-issued code and persist the returned credential internally | Explicit setup only; never automatic |
+| `yipyapPair` | Local connector only: redeem one short app-issued code and persist the returned credential internally | Explicit local setup only; never automatic |
 | `providerReadConnectionStatus` | Fresh binding, provider, scope, and convergence attestation | First read |
 | `providerReadTeachingSettings` | Bounded track, language/script, stored level, revision, and version | Second read |
 | `providerReadTeachingContext` | Generic readiness gate plus at most 12 eligible target/gloss entries | Third read |
@@ -34,13 +46,30 @@ authenticated provider operations at a fixed production service origin:
 | `providerSubmitLearnerEvent` | Closed provider event; ordinary teaching may use only bounded `item_proposed` membership sync | After a teaching-ready draft only; never gates the reply |
 
 The app's AI-connections flow creates the short, single-use pairing code. On an
-explicit setup request, `yipyapPair` normalizes and redeems that code exactly
+explicit local-connector setup request, `yipyapPair` normalizes and redeems that code exactly
 once; it never retries an ambiguous redemption. The returned opaque, revocable
 session credential is stored in host-local connector configuration outside
 versioned plugin files. That credential is never a tool argument, model result,
 prompt value, command-line argument, log field, or Firebase, Apple, or Google
 credential. Pairing success proves only credential storage, not Connected or
 teaching-ready state.
+
+### Hosted authorization
+
+Hosted ChatGPT uses OAuth through the provider-owned connection interface.
+Never request a pairing code or credential in chat, call `yipyapPair`, create
+a local credential file, or send the learner to a terminal for this route.
+An explicit connection request may direct the learner to the supported
+provider connection interface and YipYap walkthrough. If the exact listing or
+connection route is unavailable, say so and use YipYap support; do not invent
+a deep link, treat a generic directory as an installation, or fall back to the
+local transport. Cancellation or refusal leaves authorization incomplete and
+does not trigger an automatic retry. Only a fresh compatible status round trip
+can establish Connected after the provider finishes OAuth.
+
+This transport distinction changes no teaching procedure, scope, Learning Mode
+or account authority. Installation and OAuth success alone never authorize
+teaching; the same fresh status, settings and context gates still apply.
 
 Connection status contains raw account and installation binding values only
 inside the connector so it can validate the round trip. Strip those identities
@@ -90,8 +119,8 @@ are explicit account-data reads, not teaching cycles. After exact command
 matching, call `providerReadConnectionStatus` once and require a compatible,
 converged result with `connection.status` and `lexicon.read`. Then call
 `providerReadLexiconProjection` exactly once with the closed request in
-`controls-v1.md`; the remote MCP exposes that logical operation as
-`yipyap_read_lexicon`. Do not require `teaching.read`, teaching settings,
+`controls-v1.md`. Local and remote MCP surfaces use this same tool name.
+Do not require `teaching.read`, teaching settings,
 teaching context, or Learning Mode. Do not append teaching content or its
 footer, and do not call the event operation.
 

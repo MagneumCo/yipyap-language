@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "yipyap-language",
   "displayName": "YipYap (Language)",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "description": "Provider-neutral YipYap learning with supported-host session bootstrap and a bounded account connector.",
   "author": {
     "name": "MagneumCo",
@@ -10,7 +10,7 @@
   },
   "homepage": "https://github.com/MagneumCo/yipyap-language",
   "repository": "https://github.com/MagneumCo/yipyap-language",
-  "license": "Proprietary",
+  "license": "LicenseRef-YipYap-Rights-Notice",
   "keywords": [
     "language-learning",
     "yipyap"

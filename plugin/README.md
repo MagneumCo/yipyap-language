@@ -18,6 +18,11 @@ one teaching meaning.
 A new or disconnected installation is safe by default: it operates at
 effective level L0 and introduces no YipYap teaching items.
 
+Send exact `YipYap help` to see the static command menu, including app-only
+controls and unavailable features. Help works without an account connection
+and makes no account or update calls. Teaching footers include the quiet
+`help: YipYap help` hint only in packages that support this command.
+
 The v0.3 package selects the exact `future-production` API-origin profile at
 `https://api.magneum.co`. Its connector uses a provider- and profile-bound
 local credential file and does not inherit the legacy environment token or
@@ -161,3 +166,7 @@ pairing, completion, or failure.
 
 See [SETUP.md](SETUP.md) for runtime, pairing, reconnect, and troubleshooting
 details.
+
+Rights notice: this package is proprietary. Both provider manifests declare
+`LicenseRef-YipYap-Rights-Notice`, which refers to [LICENSE.md](LICENSE.md) in
+this package root.

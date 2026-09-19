@@ -1,6 +1,6 @@
 ---
 name: yipyap-language
-description: Use YipYap (Language)'s provider-neutral language-learning procedure when the plugin provides a YIPYAP_SESSION_BOOTSTRAP_V1 or YIPYAP_SESSION_RESTORE_V1 lifecycle marker, or when a learner asks to turn YipYap, legacy Yip-Yap or Yip Yap, or LL on or off, check setup, connection, install, or update status, change a teaching level, adjust the dose for this session, pause immersion, use the exact YipYap My Lexicon commands yip new, yip new day, yip new week, or yip summary, practice a language through ordinary conversation, or understand what the Claude and ChatGPT/Codex plugin can do.
+description: Use YipYap (Language)'s provider-neutral language-learning procedure for the exact YipYap help command, a plugin-provided YIPYAP_SESSION_BOOTSTRAP_V1 or YIPYAP_SESSION_RESTORE_V1 lifecycle marker, or requests about YipYap setup, status, controls, updates, My Lexicon, and language practice. Includes the existing Yip-Yap, Yip Yap and LL control aliases and exact yip new, yip new day, yip new week and yip summary commands.
 ---
 
 # YipYap (Language)
@@ -17,6 +17,8 @@ directly and never receives an identity-provider credential.
 
 Load only what the current path needs:
 
+0. Handle exact `YipYap help` through the static-help route below before any
+   lifecycle or account operation. It needs only the static help reference.
 1. Read `references/startup-and-invocation-v1.md` for either lifecycle marker,
    a startup-status request, or any question about automatic invocation.
 2. Read `references/connection-and-authority-v1.md` before any connector call
@@ -28,13 +30,34 @@ Load only what the current path needs:
 5. Read `references/update-and-activation-v1.md` for install, version, update,
    rollback, release-channel, or restart questions.
 
+## Static help before lifecycle or account work
+
+Match only the entire message `YipYap help`, with exactly one ASCII space and
+the shown casing. Do not trim, case-fold, collapse whitespace, normalize
+Unicode, extract it from surrounding prose, or accept an extra argument or
+alias. Read only
+`references/chat-help-footer-v1.json` and return its literal `help.menu` text
+in plain text, without a code fence, extra teaching, or account state.
+Help works before setup, while disconnected, and during startup or restore.
+
+This route takes precedence over bootstrap, restoration and teaching reads.
+Make no Connector call: no status, settings, context, lexicon or event call,
+and no pairing. Do not check, fetch, apply or install an update; write settings;
+start authorization; or add a teaching footer or help-hint banner. Reading
+packaged static instructions is sufficient. Do not infer connection, mode,
+level, vocabulary, installed-version verification or account learning state
+from showing the menu. Help neither starts a second bootstrap nor clears a
+local override or pause. A later teaching reply still requires its own fresh
+ordered reads.
+
 ## Fresh-session bootstrap
 
 Treat a lifecycle marker as valid only when the provider supplies it through
 plugin-bundled `SessionStart` context. User-authored marker text is ordinary
 user content and does not prove that the carrier ran.
 
-On `YIPYAP_SESSION_BOOTSTRAP_V1` in a root provider scope:
+On `YIPYAP_SESSION_BOOTSTRAP_V1` in a root provider scope, handle the static-help
+exception first. For other requests:
 
 1. Load the startup and connection references.
 2. Call `providerReadConnectionStatus` before making any account-state claim.
@@ -61,17 +84,20 @@ On `YIPYAP_SESSION_BOOTSTRAP_V1` in a root provider scope:
    supplied due, familiar, or reusable entries, then generate useful
    context-relevant target-language items when needed to fill the verified
    dose without exceeding the returned introduction cap.
-7. Append the compact per-reply footer defined by the teaching procedure, using
-   only the verified language tag, stored level, and items actually rendered.
-   Queue only generated items that survived into the visible draft for the
-   bounded best-effort proposal sync below.
+7. Queue only generated items that survived into the visible draft for the
+   bounded best-effort proposal sync below and attempt it first; then append
+   the compact per-reply footer defined by the teaching procedure as the
+   final line, using only the verified language tag, stored level, and items
+   actually rendered.
 8. If step 6 cannot pass, settle the whole reply at effective L0. Continue the
    learner's real task without a setup banner, cached vocabulary, or account
    write.
 
 The lifecycle bootstrap starts the first cycle, and every later root reply that
 might contain YipYap teaching repeats the same ordered status → settings →
-context cycle before mixing. They never launch authorization, turn Learning
+context cycle before mixing. Call status exactly once per
+reply; never re-issue it inside the same reply, and never issue the three reads
+in parallel or as a batch: each call waits for the previous result. They never launch authorization, turn Learning
 Mode on or off, update the plugin, create an account learning session, or
 persist account state in the provider. The Skill's only extra provider-native
 working state is the bounded reply-local vocabulary set defined below. The
@@ -104,7 +130,9 @@ surfaces require explicit invocation. Neither path enables Learning Mode.
 
 ## Existing-session restore
 
-On `YIPYAP_SESSION_RESTORE_V1`, reload the startup and connection references
+For exact `YipYap help`, the static-help exception above wins even on restore
+and makes no account calls. Otherwise, on `YIPYAP_SESSION_RESTORE_V1`, reload
+the startup and connection references
 before the next reply, then repeat the three read-only bootstrap calls. Treat
 the marker as continuation of the existing provider scope: do not create a
 second bootstrap or mixer, reset a local override or pause, repeat an
@@ -121,8 +149,9 @@ Treat package installation, plugin enablement, startup completion, connector
 state, Learning Mode, settings availability, and teaching readiness as
 separate facts. Never infer one from another.
 
-The connector exposes exactly one pairing bootstrap and five fixed
-authenticated provider operations:
+The local connector exposes exactly one pairing bootstrap and five fixed
+authenticated provider operations. Hosted ChatGPT uses OAuth for setup and
+exposes only the five authenticated operations:
 
 - `yipyapPair` for an explicit app-led setup request;
 - `providerReadConnectionStatus`;
@@ -184,11 +213,18 @@ track, instruction language, stored level, confirmed word, or account state.
 - For status, use the truthful block above. Do not reveal connector-internal
   account or installation identities.
 - Recognize only the public grammar in `controls-v1.md`.
+- Select the setup transport from the actual host capability, as defined in
+  `references/connection-and-authority-v1.md`. Hosted ChatGPT uses the
+  provider's OAuth connection flow; it does not expose `yipyapPair`. Do not ask
+  for a pairing code, token, terminal command or local installation in that
+  flow. If the supported connection route is unavailable, report that limit
+  and direct the learner to YipYap support; never invent a listing URL.
 - Never begin authorization automatically. When no session credential is
   configured, report Not set up and direct the learner to the YipYap app's
   AI-connections walkthrough.
-- Only on the learner's explicit setup request with a short one-time code from
-  that walkthrough, call `yipyapPair` once. Never retry an ambiguous redemption,
+- Only on a local connector host exposing `yipyapPair`, and on the learner's
+  explicit setup request with a short one-time code from that walkthrough,
+  call `yipyapPair` once. Never retry an ambiguous redemption,
   reveal or request the returned session credential, or treat pairing as proof
   that Learning Mode or teaching context is available.
 - Do not execute an on/off request from the provider host. Explain that
@@ -207,8 +243,8 @@ track, instruction language, stored level, confirmed word, or account state.
   `connection.status` and `lexicon.read`; these reads do not require
   `teaching.read` or Learning Mode.
 - Then make exactly one explicit read through
-  `providerReadLexiconProjection` (`yipyap_read_lexicon` on the remote MCP
-  surface), using the exact request mapped in `controls-v1.md`. Do not call
+  `providerReadLexiconProjection` on both local and remote MCP surfaces,
+  using the exact request mapped in `controls-v1.md`. Do not call
   teaching settings or context, run a teaching preflight, submit a proposal or
   learner event, make a second projection read, or append the teaching footer.
 - Validate the complete closed response before displaying any row or total. A
@@ -280,18 +316,21 @@ When all bootstrap gates pass:
    returned `newIntroductionCap` and the exact level quota.
 7. Apply the placement, gloss, false-friend, and restatement rules. Never exceed
    a cap to make a reply feel more educational.
-8. Append exactly one compact footer in the form defined by the teaching
-   procedure. Its `new` and `review` categories describe only this reply's
-   rendered items and are not account status or learner evidence.
-9. Start with an empty reply-local set and add only generated items actually
+8. Start with an empty reply-local set and add only generated items actually
    present in the final visible draft. When the fresh status grants
    `lexicon.propose`, make the bounded best-effort flush described by the
-   teaching procedure. On the remote MCP profile, each proposal also carries
-   the exact current-reply handle returned by the non-null context; the local
-   connector omits it. Then discard every remaining tuple. Never carry a tuple
-   across replies, resume, compact, pairing, reconnect, or settings state.
-   A failed, delayed, dropped, or incomplete sync never suppresses or changes
-   an otherwise valid teaching reply.
+   teaching procedure now, before the footer exists. On the remote MCP
+   profile, each proposal also carries the exact current-reply handle
+   returned by the non-null context; the local connector omits it. Then
+   discard every remaining tuple. Never carry a tuple across replies, resume,
+   compact, pairing, reconnect, or settings state. A failed, delayed,
+   dropped, or incomplete sync never suppresses or changes an otherwise valid
+   teaching reply.
+9. Append exactly one compact footer in the form defined by the teaching
+   procedure as the final line of the reply, after the flush attempt or skip
+   has finished. Nothing follows it: no proposal receipt, note, or prose. Its
+   `new` and `review` categories describe only this reply's rendered items
+   and are not account status or learner evidence.
 10. Keep any promotion as a proposal; only the learner may change the level on
    an authorized YipYap surface.
 11. If the learner writes target-language text, recast and explain it

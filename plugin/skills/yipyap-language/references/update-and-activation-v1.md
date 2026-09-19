@@ -4,6 +4,27 @@ This reference owns install/update truth at the provider boundary. It does not
 own account connection, Learning Mode, teaching readiness, curriculum, learner
 state, or the release-signing ceremony.
 
+## Hosted capability boundary
+
+On a remote-MCP-only host such as ordinary ChatGPT, the local Node connector,
+execution hook and signed-channel checker/fetcher are not supplied by the
+shared Skill bundle. The local commands below apply only when those separately
+trusted capabilities are actually installed and available. Never run or
+suggest them in a hosted chat, ask the learner to install Node, clone a
+repository, paste replacement instructions, or download missing helpers.
+
+For an update or version request without provider-native version evidence or
+a trusted updater result, report that verification is unavailable. Do not
+infer an installed version from this reference, an MCP server label, a signed
+local release or a portal draft. Use the provider's supported plugin-management
+surface and YipYap support for help. An uploaded Skill is a reviewed snapshot;
+changing the server or local package does not update that snapshot. Its next
+version requires the provider's supported review/update path. The local
+restart-new-root rule below does not establish hosted snapshot activation.
+
+This unavailable-capability path makes no account, update or network call and
+does not weaken the local signed-update checks.
+
 ## Keep startup and updates separate
 
 The `SessionStart` lifecycle hook is fixed, synchronous, read-only, and

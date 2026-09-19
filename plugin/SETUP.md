@@ -225,3 +225,7 @@ claimed until its separate owner gate and retained receipt exist. Claude public
 directory review likewise requires a working app-led pairing path and
 reviewer-safe evidence. Repository or local installation remains a separate
 distribution path.
+
+Rights notice: the installed package root carries [LICENSE.md](LICENSE.md),
+the file named by the manifests' `LicenseRef-YipYap-Rights-Notice` license
+string. Installation grants only the use described there.

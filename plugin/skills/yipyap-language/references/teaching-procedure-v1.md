@@ -153,6 +153,7 @@ from an earlier reply, `resume`, `compact`, pairing, reconnect, or settings
 state. This reply-local lifetime intentionally sacrifices uncaptured items
 instead of risking an item or meaning crossing accounts or language tracks.
 
+The flush runs before the footer is rendered, never after it.
 After a teaching-ready draft is final and a fresh connection status grants
 `lexicon.propose`, attempt at most the two oldest pending tuples. For each one,
 call the existing `providerSubmitLearnerEvent` operation. On the remote MCP
@@ -239,12 +240,25 @@ log, score, or admit the learner's conversation text as YipYap evidence.
 
 ## Per-reply transparency footer
 
-For every teaching-ready reply, append one plain-text final line no longer than
-120 characters:
+The additive `yipyap.chat-help-footer.v1` contract in
+`chat-help-footer-v1.json` owns this presentation grammar. Advertise the hint
+only when this host implements the matching exact `YipYap help` command. The
+menu and hint ship together; an older installation cannot claim support.
+
+For every teaching-ready reply, after the proposal flush has been attempted or
+skipped, append one plain-text final line, with nothing after it, no longer than
+120 characters, counted by Unicode code points rather than UTF-16 code units:
 
 ```text
-⟦YIP <languageTag> L<storedLevel> │ new <n>: <targets or —> │ review <n>: <targets or —>⟧
+⟦YIP <languageTag> L<storedLevel> │ new <n>: <targets or —> │ review <n>: <targets or —> │ help: YipYap help⟧
 ```
+
+Keep the hint inside the same brackets and plain-text line. Add no separate
+banner, emoji, bold callout or extra explanatory sentence.
+Count the entire line, including brackets, spaces, separators and the hint.
+Preserve exact target spelling, including combining characters; do not
+normalize or truncate targets. Separate listed targets with `, ` and use an
+em dash for an empty target set in the full form.
 
 Use the verified language tag and stored level. `new` counts only supplied
 entries rendered with `isNew: true` plus generated items actually rendered in
@@ -254,11 +268,23 @@ in the reply body. Footer-only tokens never count toward the dose, introduction
 cap, `new` or `review` totals, pending state, or proposal sync.
 The labels describe this reply's presentation; they are not learner truth or a
 claim that an item is new, due, familiar, or known in the master lexicon. If the
-line would exceed 120 characters, drop both target lists before dropping the
-language tag, level, or counts. Never add known totals, scores, streaks, due
+line would exceed 120 characters, drop both target lists together and use:
+
+```text
+⟦YIP <languageTag> L<storedLevel> │ new <n> │ review <n> │ help: YipYap help⟧
+```
+
+Use that compact form also when a target contains a line break, Unicode line
+or paragraph separator, control character, comma, or footer delimiter (`│`,
+`⟦`, `⟧`). Preserve the language
+tag, stored level, actual counts and help hint. Never truncate or alter those
+fields or omit only one target list. If even the compact form exceeds 120
+Unicode code points, omit the footer rather than corrupting its fields.
+Never add known totals, scores, streaks, due
 totals, mastery, promotion progress, or values reconstructed from chat.
 
-Do not render this footer for disconnected, unavailable, malformed, null,
+Do not render this footer for static help or an explicit My Lexicon read, or
+for disconnected, unavailable, malformed, null,
 unsupported, or otherwise non-teaching-ready context. A subagent or delegated
 worker never renders it. The footer itself is presentation only and is never
 queued or synced.

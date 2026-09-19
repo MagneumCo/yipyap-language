@@ -69,14 +69,25 @@ continuation and subagent events, it is not auto-launch-ready.
 
 ## Run a read-first bootstrap
 
+Exact whole-message `YipYap help` takes precedence over startup and restore
+account reads. Follow the Skill's static-help route, read only packaged static
+instructions, and return the menu without any Connector call, pairing,
+authorization, settings write, update action or teaching footer. This exception
+does not create a second bootstrap or reset a local override, pause or account
+session. A later potentially mixed reply still begins its own fresh ordered
+reads. Help does not establish any connection or teaching state.
+
 The carrier itself emits only the fixed lifecycle markers. It ignores hook
 input, reads no files or environment state, performs no network request, and
 writes nothing.
 
-The connected profile uses its already-authorized fixed connector before the
+Outside that static-help exception, the connected profile uses its
+already-authorized fixed connector before the
 first visible root reply and repeats the cycle before every later root reply
 that might contain YipYap teaching. It calls connection status, teaching
-settings, and teaching context in that order. The context request carries only
+settings, and teaching context in that order. It calls status exactly once per reply,
+never re-issues it inside the same reply, and never issues the three reads in
+parallel or as a batch; each call waits for the previous result. The context request carries only
 `redPresent` and `mostlyFrozen`, the two content-free booleans derived after
 the correct answer has been drafted and zoned. It never sends the draft,
 prompt, or conversation.

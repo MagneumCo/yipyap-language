@@ -3,6 +3,24 @@
 This file distinguishes account controls, stored teaching controls, and
 session-only controls. Do not merge those categories.
 
+## Static help
+
+Recognize only exact whole-message `YipYap help`: the shown casing, one ASCII
+space, no leading or trailing whitespace, extra text, normalization or aliases.
+The versioned `chat-help-footer-v1.json` reference owns this additive command
+and its static menu. Return only its literal `help.menu` text. It describes
+available commands, app-only controls and unavailable features without claiming
+current connection, Learning Mode, level, vocabulary or update state.
+
+Route this command before all account reads, including startup and restore.
+Read only packaged static instructions; make no Connector call, pairing,
+authorization, settings write, update check/fetch/apply or installation.
+Append no teaching footer or separate hint banner to help. The next ordinary
+teaching reply still requires a fresh status → settings → context cycle.
+Existing command forms and aliases below retain their original behavior.
+The broader proposed `YipYap <command>` family is not implemented by this help
+menu; do not add help aliases or advertise proposed commands as working.
+
 ## Account-held Learning Mode
 
 Recognize these exact public forms:
@@ -85,8 +103,8 @@ response may state the four exact supported forms without reading account data.
 For a valid form, first make one fresh connection-status call. Continue only
 when the result is compatible and converged and grants `connection.status` and
 `lexicon.read`; otherwise make no projection call. Then make exactly one
-`providerReadLexiconProjection` read (`yipyap_read_lexicon` on the remote MCP
-surface) with the mapped request. Learning Mode may be off. Do not call teaching
+`providerReadLexiconProjection` read on both local and remote MCP surfaces
+with the mapped request. Learning Mode may be off. Do not call teaching
 settings or context, run teaching preflight, submit a vocabulary proposal or
 learner event, make another projection read, or append a teaching footer.
 

@@ -1,0 +1,130 @@
+{
+  "schema": "yipyap.chat-help-footer.v1",
+  "version": 1,
+  "authority": "YipYap",
+  "scope": "static-help-and-footer-presentation",
+  "help": {
+    "command": "YipYap help",
+    "match": "exact-whole-message",
+    "normalization": "none",
+    "aliases": [],
+    "priority": "before-account-reads-including-startup-and-restore",
+    "connectorCalls": 0,
+    "teaching": false,
+    "teachingFooter": false,
+    "proposals": false,
+    "accountStateClaims": false,
+    "menuLanguage": "en-US",
+    "menu": "YipYap help\n\nAvailable in chat:\nYipYap help — Show this menu; no account connection needed.\nYipYap status — Check this host's connection and teaching readiness.\nyip new — Personal words from the last seven days, split into last 24 hours and earlier.\nyip new day — Personal words from the last 24 hours.\nyip new week — Personal words from the last seven days, in one group.\nyip summary — Personal My Lexicon counts, not learning scores.\nStatus can report Not set up or Unavailable; vocabulary reads require an available authorized connection.\nYipYap update status — Check the signed update channel only where the trusted updater is available; does not install an update.\n\nComplete in the YipYap app:\nYipYap on / YipYap off — Learning Mode; chat provides guidance only.\nset_level <0..8> / level_up / level_down — Stored level; chat provides guidance only.\nAccount connection, disconnection, language selection and account settings use the app's controls or setup walkthrough.\n\nUnavailable:\nmore / less / pause — Await the account-session contract.\nLevels 9 and 10 — Await the teaching contract.\n\nUse each command as a separate message, exactly as shown.\nExample: YipYap status\nExample: yip new day\nExisting LL, Yip-Yap and Yip Yap status/mode aliases retain their original behavior; they do not create help aliases.",
+    "nextOrdinaryReply": "fresh-status-settings-context-cycle"
+  },
+  "retainedAliases": {
+    "status": [
+      "YipYap status",
+      "LL status",
+      "Yip-Yap status",
+      "Yip Yap status"
+    ],
+    "updateStatus": [
+      "YipYap update status",
+      "Yip-Yap update status"
+    ],
+    "modeOn": [
+      "YipYap on",
+      "LL on",
+      "LL enable",
+      "Yip-Yap on",
+      "Yip Yap on"
+    ],
+    "modeOff": [
+      "YipYap off",
+      "LL off",
+      "LL disable",
+      "Yip-Yap off",
+      "Yip Yap off"
+    ],
+    "appOnlyLevel": [
+      "set_level <0..10>",
+      "level_up",
+      "level_down"
+    ],
+    "unavailableSession": [
+      "more",
+      "less",
+      "pause"
+    ],
+    "unavailableLevels": [
+      9,
+      10
+    ]
+  },
+  "lexiconCommands": [
+    {
+      "command": "yip new",
+      "request": {
+        "schema": "yipyap.lexicon-read-request.v1",
+        "view": "recent",
+        "window": "week"
+      },
+      "groups": [
+        "Last 24 hours",
+        "Earlier in the last 7 days"
+      ],
+      "description": "Personal words from the last seven days, split into last 24 hours and earlier."
+    },
+    {
+      "command": "yip new day",
+      "request": {
+        "schema": "yipyap.lexicon-read-request.v1",
+        "view": "recent",
+        "window": "day"
+      },
+      "groups": [
+        "Last 24 hours"
+      ],
+      "description": "Personal words from the last 24 hours."
+    },
+    {
+      "command": "yip new week",
+      "request": {
+        "schema": "yipyap.lexicon-read-request.v1",
+        "view": "recent",
+        "window": "week"
+      },
+      "groups": [
+        "Last 7 days"
+      ],
+      "description": "Personal words from the last seven days, in one group."
+    },
+    {
+      "command": "yip summary",
+      "request": {
+        "schema": "yipyap.lexicon-read-request.v1",
+        "view": "summary"
+      },
+      "groups": [],
+      "description": "Personal My Lexicon counts, not learning scores."
+    }
+  ],
+  "footer": {
+    "maxCharacters": 120,
+    "characterUnit": "unicode-code-points",
+    "hint": "help: YipYap help",
+    "full": "⟦YIP <languageTag> L<storedLevel> │ new <n>: <targets or —> │ review <n>: <targets or —> │ help: YipYap help⟧",
+    "compact": "⟦YIP <languageTag> L<storedLevel> │ new <n> │ review <n> │ help: YipYap help⟧",
+    "overflow": "drop-both-target-lists-together",
+    "compactOverflow": "omit-footer-never-truncate-or-alter-fields",
+    "style": "one-plain-text-line-no-banner-emoji-bold-or-extra-explanation",
+    "eligibility": "existing-complete-fresh-teaching-context-and-supported-level",
+    "availability": "only-when-this-host-implements-this-help-command",
+    "noFooterFor": [
+      "static-help",
+      "explicit-lexicon-read",
+      "non-teaching-ready",
+      "subagent"
+    ],
+    "counts": "unchanged-current-reply-rendered-items-not-learner-truth",
+    "listDelimiter": ", ",
+    "unsafeTargetLists": "omit-both-lists-if-targets-contain-line-breaks-controls-commas-or-footer-delimiters"
+  }
+}
