@@ -229,6 +229,16 @@ track, instruction language, stored level, confirmed word, or account state.
   that Learning Mode or teaching context is available.
 - Do not execute an on/off request from the provider host. Explain that
   Learning Mode is an account-holder action on a YipYap-controlled surface.
+- When local pairing returns `identity_unknown`, do not stop at an unknown-error
+  label. First explain that the code must come from the matching Codex or Claude
+  Code setup choice, and that ChatGPT authorization codes cannot pair a local
+  plugin. A Codex task reached through ChatGPT Remote still requires Codex.
+  If the learner's screenshot identifies the submitted code as ChatGPT, name
+  that wrong-flow cause explicitly. Without that evidence, describe it as the
+  first check, not a proven diagnosis; invalid, expired, consumed and other
+  binding refusals share the same result. Direct the learner to the matching
+  setup choice for a fresh code; never retry the rejected code or infer an
+  outdated app or an account/email mismatch from this error alone.
 - Never claim that installing, connecting, or invoking the Skill enabled
   Learning Mode.
 
@@ -315,7 +325,24 @@ When all bootstrap gates pass:
    newly introduced supplied plus generated items must remain within the
    returned `newIntroductionCap` and the exact level quota.
 7. Apply the placement, gloss, false-friend, and restatement rules. Never exceed
-   a cap to make a reply feel more educational.
+   a cap to make a reply feel more educational. Before settling each user-visible
+   root reply, audit its rendered body against the verified level's exact GREEN
+   quota, including progress updates and final summaries. At L4, each GREEN
+   sentence needs one target-language item; one item in a multi-sentence reply
+   or a footer alone does not meet that dose. Count rendered uses, not only
+   distinct newly introduced items. A heading, bold status summary, bullet,
+   label, or transition that contains ordinary prose is still GREEN; its
+   formatting alone does not make it FROZEN. Audit those lines too, and rewrite
+   or remove a redundant one if a fitting item would make it awkward. Reuse a
+   fitting supplied item or generate a context-relevant item within the
+   introduction cap. Rewrite an awkward GREEN sentence around a useful item
+   instead of wedging an article-bearing
+   phrase into an incompatible instruction-language slot. Never relabel GREEN
+   prose as RED/FROZEN or break it into fragments to evade the quota. Preserve
+   genuinely RED/FROZEN text and the answer's clarity. An instruction to run a
+   command, click a control, change a setting, or take another physical action
+   remains entirely RED, including the prose that introduces a code block;
+   put any useful teaching item in a separate GREEN explanation.
 8. Start with an empty reply-local set and add only generated items actually
    present in the final visible draft. When the fresh status grants
    `lexicon.propose`, make the bounded best-effort flush described by the

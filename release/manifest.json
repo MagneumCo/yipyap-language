@@ -1,11 +1,11 @@
 {
   "schemaVersion": "yipyap.public-release.v1",
   "pluginId": "yipyap-language",
-  "version": "0.3.7",
-  "releaseTag": "v0.3.7",
+  "version": "0.3.8",
+  "releaseTag": "v0.3.8",
   "repository": "MagneumCo/yipyap-language",
   "channel": "stable",
-  "releaseSequence": 10,
+  "releaseSequence": 11,
   "activation": "restart-new-root",
   "signingKeyId": "yipyap-release-ed25519-v1",
   "minimumHosts": {
@@ -35,7 +35,7 @@
       "lexicalNormalizationVectorsSha256": "46614f8277e405aa77595dbadea61f31e77d55acbb4f17ec1ddb74d4d08a112b"
     }
   },
-  "contentRootSha256": "fabb8ed2c3e16b17648d5495af64b45d8000c6868604158c9d3f4e034eb367e5",
+  "contentRootSha256": "6bdc96b91ffb6b10009b993e4128fa12586183e4e33f4f71fc0eab72458ab2ea",
   "files": [
     {
       "path": ".agents/plugins/marketplace.json",
@@ -107,13 +107,13 @@
       "path": "plugin/.claude-plugin/plugin.json",
       "bytes": 694,
       "mode": "0644",
-      "sha256": "eea1d23388017685dcd552cdb2ec9059b5546d4a34bd347b0fe523af226b3351"
+      "sha256": "0d4d171b3de2c1ac8f3e867f942ed04f4a8b6ccda0039da8e90d65eab5171a9e"
     },
     {
       "path": "plugin/.codex-plugin/plugin.json",
       "bytes": 1506,
       "mode": "0644",
-      "sha256": "02df0432cc7c6453404b1375e3892de95713515514c6a7d2659d5a83a8639529"
+      "sha256": "775ed4c1af98337822f3e5e3139f3e90dc571444d513d40935524b2b7a0cdb78"
     },
     {
       "path": "plugin/.mcp.json",
@@ -147,9 +147,9 @@
     },
     {
       "path": "plugin/mcp/connector-core.mjs",
-      "bytes": 76153,
+      "bytes": 76928,
       "mode": "0644",
-      "sha256": "20e0e82ebd1af5f9360e601b1dd162b867f7fba7868a3cd5a6aa2de4778cf270"
+      "sha256": "2d3cde9bb33e0347ce5b10e8ee50622ecc6ab56ccd74a8903d71cc1d2cffed51"
     },
     {
       "path": "plugin/mcp/server.mjs",
@@ -159,9 +159,9 @@
     },
     {
       "path": "plugin/skills/yipyap-language/SKILL.md",
-      "bytes": 22602,
+      "bytes": 24664,
       "mode": "0644",
-      "sha256": "c31d560414a84cb7129f2ed986b4a6dd69009cb89053480bf2e21a3dc6346764"
+      "sha256": "2c09dc173e0d9e7a8f2a38eaa2c24d3bf2f16c305e7a6b49bc5a9f1678110a75"
     },
     {
       "path": "plugin/skills/yipyap-language/agents/openai.yaml",
@@ -221,7 +221,7 @@
       "path": "plugin/update/release-profile.json",
       "bytes": 211,
       "mode": "0644",
-      "sha256": "c38f963dc8e1ddf4103d07e8dcb7763982ee2faafcdac095378cf74a6ee2cddd"
+      "sha256": "3e42a3e351d96f9b5beb37bd1d79984cedd7687f07a110612c226f74d16dd4d2"
     },
     {
       "path": "plugin/update/update-lib.mjs",

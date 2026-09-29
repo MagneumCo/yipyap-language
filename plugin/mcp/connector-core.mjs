@@ -30,7 +30,7 @@ import { dirname, join } from "node:path";
 export const FIREBASE_CALLABLE_BASE =
   "https://us-central1-yipyap-language.cloudfunctions.net";
 export const SESSION_TOKEN_ENV = "YIPYAP_SESSION_TOKEN";
-export const CONNECTOR_VERSION = "0.3.7";
+export const CONNECTOR_VERSION = "0.3.8";
 
 export const API_ORIGIN_PROFILE_SCHEMA = "yipyap.api-origin-profile.v1";
 export const LOCAL_CONNECTOR_CREDENTIAL_SCHEMA =
@@ -1856,7 +1856,7 @@ function toolSuccess(payload) {
   });
 }
 
-function toolFailure(error) {
+function toolFailure(error, pairingProvider = null) {
   const failure = error instanceof ConnectorFailure
     ? error
     : new ConnectorFailure("unavailable", "connector_failure");
@@ -1868,7 +1868,10 @@ function toolFailure(error) {
     connectorState: state,
     effectiveLevel: 0,
     code: failure.code,
-    message: FAILURE_MESSAGES[state],
+    message: state === "refused" && failure.code === "identity_unknown"
+      && (pairingProvider === "codex" || pairingProvider === "claude")
+      ? `Pairing code not accepted. First check which app created it: ${pairingProvider === "codex" ? "Codex needs a Codex pairing command from YipYap → AI connections → Codex, even when reached through ChatGPT Remote" : "Claude Code needs a Claude Code pairing command from YipYap → AI connections → Claude Code"}. A ChatGPT authorization code cannot be used here. If you selected the correct app, create a fresh code there; codes expire and work only once. The service does not reveal the exact refusal reason. Do not retry this code; use effective level L0.`
+      : FAILURE_MESSAGES[state],
   });
   return Object.freeze({
     isError: true,
@@ -2122,7 +2125,7 @@ export function createYipYapConnector({
         }
       } catch (error) {
         clearTeachingCycle();
-        return toolFailure(error);
+        return toolFailure(error, name === "yipyapPair" ? providerId : null);
       }
     },
   });

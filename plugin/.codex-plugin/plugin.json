@@ -1,6 +1,6 @@
 {
   "name": "yipyap-language",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "Provider-neutral YipYap learning with supported-host session bootstrap and a bounded account connector.",
   "author": {
     "name": "MagneumCo",
